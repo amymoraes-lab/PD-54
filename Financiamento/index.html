@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulador Financiamento de Veículos — Franq</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body { font-family: 'DM Sans', sans-serif; }
+  /* Nib Pro é uma fonte proprietária usada no Figma; fallback serifado mais próximo */
+  .font-nib { font-family: 'Nib Pro', Georgia, 'Times New Roman', serif; }
+  .fvs { font-variation-settings: 'opsz' 14; }
+  .screen { display: none; }
+  .screen.active { display: flex; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .tipo-btn { cursor: pointer; transition: background-color .15s ease; }
+  .tipo-btn.selected { background-color: #f2f4fe; }
+  button { cursor: pointer; }
+  /* cadastro */
+  #screencad .border:focus-within { border-color: #687bea; }
+  #screencad button { transition: filter .15s ease, opacity .15s ease; }
+  #screencad button:hover:not([disabled]) { filter: brightness(0.96); }
+  #screencad button:active:not([disabled]) { filter: brightness(0.92); }
+  #screencad button[disabled] { cursor: progress; }
+  /* loading do simulador */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader { width: 34px; height: 34px; border: 3px solid #e2e8f0; border-top-color: #687bea; border-radius: 50%; animation: spin .7s linear infinite; }
+  #s2-loading { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ============================ SCREEN: STEP 01 ============================ -->
+<section id="screen1" class="screen active flex-col items-start w-full">
+  <div data-part="header"></div>
+  <div data-part="banner"></div>
+
+  <div class="bg-white flex gap-[100px] items-start justify-center px-[16px] py-[64px] w-full">
+    <!-- form -->
+    <div class="flex flex-col gap-[42px] items-start justify-center shrink-0 w-[584px]">
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <!-- título -->
+        <div class="flex flex-col items-start shrink-0 w-full">
+          <div class="w-full">
+            <p class="font-medium fvs text-[#0d062d] text-[20px] tracking-[-0.2px] leading-[32px] mb-[12px]">Informe os dados para começar a simulação</p>
+            <div class="h-px w-full bg-[#e9e9e9]"></div>
+          </div>
+        </div>
+
+        <!-- tipo de veículo (toggle) -->
+        <div class="flex flex-col gap-[6px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Qual o tipo de veículo?</p>
+          <div class="flex gap-[16px] items-center w-full" data-toggle-group>
+            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+              <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Seminovo</span>
+            </button>
+            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+              <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">0 Km</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- placa (opcional) -->
+        <div data-placa-field class="flex flex-col gap-[6px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Placa do veículo <span class="text-[#6a7282] font-normal">(opcional)</span></p>
+          <div id="s1-placa-box" class="border border-[#ccc] flex items-center justify-between gap-[8px] px-[16px] py-[12px] rounded-[12px] w-full">
+            <input id="s1-placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" placeholder="ABC1D23" />
+            <button type="button" onclick="buscarPlacaS1()" aria-label="Buscar placa" class="shrink-0 flex items-center justify-center cursor-pointer">
+              <svg class="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="#687bea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+          </div>
+          <p id="s1-placa-erro" class="font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]" style="display:none">Placa não encontrada. Preencha os dados manualmente.</p>
+          <p class="text-[12px] text-[#6a7282] leading-[16px]">Informe a placa para preencher os dados automaticamente</p>
+        </div>
+
+        <!-- formulário -->
+        <div class="flex flex-col gap-[16px] items-start shrink-0 w-full">
+          <!-- tipo de veículo select -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Tipo de veículo:</label>
+            <div class="relative w-full">
+              <select id="s1-tipo" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="" disabled selected>Selecione</option>
+                <option>Veículos leves</option>
+                <option>Veículos pesados</option>
+                <option>Motocicletas</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <!-- marca select -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Marca:</label>
+            <div class="relative w-full">
+              <select id="s1-marca" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="" disabled selected>Selecione</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <!-- modelo select -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Modelo:</label>
+            <div class="relative w-full">
+              <select id="s1-modelo" disabled class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea] disabled:opacity-60 disabled:cursor-not-allowed">
+                <option value="" disabled selected>Selecione a marca primeiro</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <!-- ano select -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Ano do modelo/combustível:</label>
+            <div class="relative w-full">
+              <select id="s1-ano" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="" disabled selected>Selecione</option>
+                <option>2024 - Flex</option>
+                <option>2023 - Flex</option>
+                <option>2022 - Gasolina</option>
+                <option>2021 - Diesel</option>
+                <option>2020 - Flex</option>
+                <option>2019 - Gasolina</option>
+                <option>2018 - Álcool</option>
+                <option>2017 - Diesel</option>
+                <option>2016 - Gasolina</option>
+                <option>2015 - Flex</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <!-- valor do veículo -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor do veículo:</p>
+            <div class="border border-[#e2e8f0] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input id="s1-veiculo" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#364153] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
+            </div>
+            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗</p>
+            <p id="s1-fipe-hint" class="text-[12px] text-[#6a7282] leading-[16px]"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- botão -->
+      <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
+        <button id="s1-simular" onclick="simular()" class="flex gap-[24px] items-center justify-end shrink-0">
+          <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Simular financiamento</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- right: simulador desabilitado -->
+    <div class="flex flex-col items-center justify-center shrink-0">
+      <div class="flex flex-col gap-[36px] items-start shrink-0 w-[517px]">
+        <div class="flex flex-col items-start w-full">
+          <p class="font-medium fvs text-[20px] text-black tracking-[-0.2px] leading-[32px] mb-[2px]">Resultado da sua simulação</p>
+          <div class="h-px w-full bg-[#e9e9e9]"></div>
+        </div>
+        <div class="relative w-[517px] h-[451px]">
+          <div class="absolute inset-0 top-[1px] bg-[rgba(243,245,252,0.4)] rounded-[17.167px]"></div>
+          <div class="absolute inset-0 bg-[rgba(243,245,252,0.4)] rounded-[17.167px]"></div>
+          <div class="absolute left-1/2 -translate-x-1/2 top-[86px] flex flex-col gap-[32px] items-center">
+            <img class="w-[177.077px] h-[184.067px]" src="assets/illus.svg" alt="" />
+            <div class="flex flex-col gap-[12px] items-center text-[#0d062d]">
+              <p class="font-medium fvs text-[22px] text-center w-[412px] leading-[28px]">Falta pouco para habilitar o simulador!</p>
+              <p class="font-normal fvs text-[18px] text-center w-[458px] leading-[26px]">Informe ao lado os dados do veículo para continuar com a simulação.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<!-- ============================ SCREEN: STEP 02 ============================ -->
+<section id="screen2" class="screen flex-col items-start w-full">
+  <div data-part="header"></div>
+  <div data-part="banner"></div>
+
+  <div class="bg-white flex gap-[100px] items-start justify-center px-[16px] py-[64px] w-full">
+    <!-- form (preenchido) -->
+    <div class="flex flex-col gap-[42px] items-start justify-center shrink-0 w-[584px]">
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <div class="flex flex-col items-start shrink-0 w-full">
+          <div class="w-full">
+            <p class="font-medium fvs text-[#0d062d] text-[20px] tracking-[-0.2px] leading-[32px] mb-[12px]">Informe os dados para começar a simulação</p>
+            <div class="h-px w-full bg-[#e9e9e9]"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[6px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Qual o tipo de veículo?</p>
+          <div class="flex gap-[16px] items-center w-full" data-toggle-group>
+            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+              <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Seminovo</span>
+            </button>
+            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+              <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">0 Km</span>
+            </button>
+          </div>
+        </div>
+
+        <div data-placa-field class="flex flex-col gap-[6px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Placa do veículo <span class="text-[#6a7282] font-normal">(opcional)</span></p>
+          <div id="s2-placa-box" class="border border-[#ccc] flex items-center justify-between gap-[8px] px-[16px] py-[12px] rounded-[12px] w-full">
+            <input id="s2-placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" placeholder="ABC1D23" />
+            <button type="button" onclick="buscarPlacaS2()" aria-label="Buscar placa" class="shrink-0 flex items-center justify-center cursor-pointer">
+              <svg class="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="#687bea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+          </div>
+          <p id="s2-placa-erro" class="font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]" style="display:none">Placa não encontrada. Preencha os dados manualmente.</p>
+          <p class="text-[12px] text-[#6a7282] leading-[16px]">Informe a placa para preencher os dados automaticamente</p>
+        </div>
+
+        <div class="flex flex-col gap-[16px] items-start shrink-0 w-full">
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Tipo de veículo:</label>
+            <div class="relative w-full">
+              <select id="s2-tipo" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="">Selecione</option>
+                <option selected>Veículos leves</option>
+                <option>Veículos pesados</option>
+                <option>Motocicletas</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Marca:</label>
+            <div class="relative w-full">
+              <select id="s2-marca" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="" disabled selected>Selecione</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Modelo:</label>
+            <div class="relative w-full">
+              <select id="s2-modelo" disabled class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea] disabled:opacity-60 disabled:cursor-not-allowed">
+                <option value="" disabled selected>Selecione a marca primeiro</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <label class="fvs text-[16px] text-[#1e2939] leading-[24px]">Ano do modelo/combustível:</label>
+            <div class="relative w-full">
+              <select id="s2-ano" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] px-[16px] py-[12px] pr-[40px] rounded-[12px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                <option value="" disabled>Selecione</option>
+                <option>2024 - Flex</option>
+                <option>2023 - Flex</option>
+                <option>2022 - Gasolina</option>
+                <option>2021 - Diesel</option>
+                <option>2020 - Flex</option>
+                <option selected>2019 - Gasolina</option>
+                <option>2018 - Álcool</option>
+                <option>2017 - Diesel</option>
+                <option>2016 - Gasolina</option>
+                <option>2015 - Flex</option>
+              </select>
+              <svg class="absolute right-[16px] top-1/2 -translate-y-1/2 pointer-events-none w-[14px] h-[14px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor do veículo:</p>
+            <div class="border border-[#e2e8f0] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input id="s2-veiculo" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#364153] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" value="R$ 32.000,00" />
+            </div>
+            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗</p>
+            <p id="s2-fipe-hint" class="text-[12px] text-[#6a7282] leading-[16px]"></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- right: simulador de financiamento -->
+    <div class="relative flex flex-col gap-[36px] items-start shrink-0 w-[508px]">
+      <div id="s2-loading" class="absolute inset-0 z-10 flex-col items-center justify-center gap-[14px] bg-white/80 rounded-[16px]" style="display:none">
+        <div class="loader"></div>
+        <p class="fvs text-[15px] font-medium text-[#364153] text-center px-[24px]">Estamos atualizando os valores do simulador...</p>
+      </div>
+      <div class="flex flex-col items-start w-full">
+        <p class="font-medium fvs text-[20px] text-black tracking-[-0.2px] leading-[32px] mb-[2px]">Resultado da sua simulação</p>
+        <div class="h-px w-full bg-[#e9e9e9]"></div>
+      </div>
+
+      <!-- card simulador -->
+      <div class="bg-white border border-[#e2e8f0] flex flex-col gap-[24px] items-start p-[24px] rounded-[16px] w-full">
+        <div class="flex flex-col gap-[16px] items-start w-full">
+          <!-- valor de entrada -->
+          <div class="flex flex-col gap-[4px] items-start w-full">
+            <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor de entrada do financiamento:</p>
+            <div class="border border-[#e2e8f0] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+              <input id="s2-entrada" data-mask="currency" inputmode="numeric" class="fvs text-[16px] text-[#364153] leading-[24px] bg-transparent outline-none flex-1 min-w-0" value="R$ 6.400,00" />
+              <span id="s2-entrada-pct" class="bg-[#f0fdf4] text-[#15803d] text-[12px] font-semibold leading-[16px] px-[16px] py-[4px] rounded-[4px] shrink-0">20%</span>
+            </div>
+            <p id="s2-entrada-hint" class="text-[12px] text-[#6a7282] leading-[16px]">Entrada sugerida: 20% do valor do veículo (R$ 6.400,00).</p>
+          </div>
+          <!-- valor do financiamento -->
+          <div class="flex flex-col gap-[4px] items-start w-full">
+            <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor do financiamento:</p>
+            <div class="border border-[#e2e8f0] flex items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input id="s2-financiamento" data-mask="currency" inputmode="numeric" class="fvs text-[16px] text-[#364153] leading-[24px] bg-transparent outline-none w-full" value="R$ 25.600,00" />
+            </div>
+          </div>
+          <!-- valor da parcela -->
+          <div class="flex flex-col gap-[4px] items-start w-full">
+            <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor aproximado da parcela:</p>
+            <div class="flex gap-[16px] items-center w-full">
+              <div class="relative w-[162px] shrink-0">
+                <select id="s2-parcelas" class="appearance-none bg-white border border-[#e2e8f0] fvs text-[16px] text-[#364153] leading-[24px] h-[48px] pl-[13px] pr-[34px] rounded-[8px] w-full outline-none cursor-pointer focus:border-[#687bea]">
+                  <option value="" disabled selected>N° de parcelas</option>
+                  <option value="12">12 meses</option>
+                  <option value="24">24 meses</option>
+                  <option value="36">36 meses</option>
+                  <option value="48">48 meses</option>
+                  <option value="60">60 meses</option>
+                </select>
+                <svg class="absolute right-[13px] top-1/2 -translate-y-1/2 pointer-events-none w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none" stroke="#364153" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+              </div>
+              <div class="bg-[#f4f3f3] border border-[#e2e8f0] flex-1 flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] min-w-0">
+                <span id="s2-parcela" class="fvs text-[16px] text-[#364153] leading-[24px]">R$</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- info box (sonner) -->
+        <div class="bg-[#eff6ff] border border-[#3b82f6] flex gap-[6px] items-start px-[16px] py-[16px] rounded-[8px] w-full" style="box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1)">
+          <img class="size-[16px] shrink-0 mt-[2px]" src="assets/info_circle.svg" alt="" />
+          <div class="flex-1 min-w-0 text-[12px] text-[#1d4ed8] fvs">
+            <p id="s2-renda" class="font-semibold leading-[16px] mb-0">Renda mensal sugerida: a partir de R$ 7.680,00</p>
+            <p class="leading-[16px] mb-0">&nbsp;</p>
+            <p class="font-normal leading-[16px] mb-0">Valor de referência com base em 30% de comprometimento de renda.</p>
+            <p class="font-normal leading-[16px]">A aprovação depende da análise de crédito do parceiro.</p>
+          </div>
+        </div>
+
+        <p class="italic fvs text-[12px] text-black leading-[1.39] w-full">*Para fins de simulação apenas. Taxas e valores sujeitos à aprovação de crédito e às demais condições do produto vigentes no momento da contratação.</p>
+      </div>
+
+      <!-- simulação da entrada (chance de aprovação) -->
+      <div class="w-full">
+        <div class="bg-[#fafaff] border border-[#e5e7eb] flex flex-col gap-[24px] items-start pt-[12px] pb-[24px] px-[24px] w-full">
+          <div class="flex items-center justify-between w-full">
+            <p class="fvs text-[16px] text-[#314158] leading-[24px]">Chance de aprovação </p>
+            <p id="s2-chance-status" class="fvs font-semibold text-[14px] text-[#33c759] leading-[20px]">Alta</p>
+          </div>
+          <!-- régua de calor -->
+          <div class="relative w-[441.5px] h-[62px]">
+            <div class="absolute left-0 top-[27px] h-[16px] w-[84.2px] bg-[#e53d3d] rounded-l-[8px]"></div>
+            <div class="absolute left-[84.2px] top-[27px] h-[16px] w-[42.1px] bg-[#e8ba26]"></div>
+            <div class="absolute left-[126.3px] top-[27px] h-[16px] w-[84.2px] bg-[#f29426]"></div>
+            <div class="absolute left-[210.5px] top-[27px] h-[16px] w-[231px] bg-[#33c759] rounded-r-[8px]"></div>
+            <img id="s2-arrow" class="absolute left-[265.5px] top-[22px] w-[14px] h-[5px]" src="assets/indicator.svg" alt="" />
+            <p id="s2-here" class="absolute left-[228px] top-0 fvs font-semibold text-[12px] text-black leading-[16px] whitespace-nowrap">Você está aqui!</p>
+            <p class="absolute left-0 top-[49px] text-[10px] text-[#8c8c8c]">0%</p>
+            <p class="absolute left-[74.2px] top-[49px] text-[10px] text-[#8c8c8c]">20%</p>
+            <p class="absolute left-[116.3px] top-[49px] text-[10px] text-[#8c8c8c]">30%</p>
+            <p class="absolute left-[200.5px] top-[49px] text-[10px] text-[#8c8c8c]">50%</p>
+            <p class="absolute left-[413.5px] top-[49px] text-[10px] text-[#8c8c8c]">100%</p>
+          </div>
+          <p class="fvs text-[12px] text-[#6a7282] leading-[16px] w-full">* A régua indica a probabilidade de aprovação baseada no valor de entrada informado.</p>
+        </div>
+      </div>
+
+      <p class="font-semibold fvs text-[#374151] text-[18px] leading-[28px] w-full">Para dar continuidade à proposta, precisamos que você crie uma conta. Assim, seu personal banker poderá acompanhar seu processo de forma personalizada e segura.</p>
+
+      <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
+        <button id="s2-continuar" onclick="continuarProposta()" class="flex gap-[24px] items-center justify-end shrink-0">
+          <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Continuar com a proposta</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<!-- ============================ SCREEN: CADASTRO ============================ -->
+<section id="screencad" class="screen flex-col items-start w-full">
+  <div data-part="header"></div>
+
+  <div class="bg-white relative h-[1062px] overflow-hidden w-full flex">
+    <!-- Banner -->
+    <div class="relative bg-white h-full overflow-hidden shrink-0 basis-[45.5%] min-w-0">
+      <div class="absolute inset-0">
+        <img class="absolute inset-0 w-full h-full object-cover opacity-70 -scale-x-100" src="assets/partners.jpg" alt="" />
+        <div class="absolute inset-0 bg-[rgba(0,0,0,0.5)]"></div>
+      </div>
+      <div class="absolute flex items-center justify-center left-[176.16px] size-[661.454px] top-[-93.37px]">
+        <div class="-rotate-[165deg]">
+          <img class="block relative size-[540.075px]" src="assets/ellipse1945.svg" alt="" />
+        </div>
+      </div>
+      <img class="absolute -translate-x-1/2 left-[calc(50%-334.76px)] size-[470.746px] top-[613.79px] block" src="assets/ellipse1944.svg" alt="" />
+      <div class="absolute inset-0" style="background-image:linear-gradient(179.97deg, rgb(19,28,37) 0%, rgba(19,28,37,0.115) 19.51%, rgba(19,28,37,0.108) 43%, rgba(19,28,37,0.061) 69.49%, rgba(19,28,37,0) 99.98%)"></div>
+      <div class="absolute inset-0" style="background-image:linear-gradient(179.97deg, rgba(19,28,37,0) 0%, rgba(19,28,37,0.058) 19.51%, rgba(19,28,37,0.054) 43%, rgba(19,28,37,0.03) 69.49%, rgba(19,28,37,0.5) 99.97%)"></div>
+      <p class="font-nib absolute leading-[1.1] left-[calc(50%-267px)] text-[#e2ece4] text-[48px] top-[calc(50%+264px)] tracking-[-0.96px] w-[336.439px]">Tenha assessoria exclusiva </p>
+    </div>
+
+    <!-- Form de cadastro -->
+    <div class="flex-1 min-w-0 h-full flex items-center justify-center px-[40px]">
+    <div class="flex flex-col gap-[16px] items-start w-[477px]">
+      <img class="h-[32px] w-[31.959px] shrink-0" src="assets/simboloazul.svg" alt="" />
+      <p class="font-nib leading-[44.8px] text-[32px] text-black tracking-[-0.32px] w-full">Cadastre-se</p>
+
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <div class="flex flex-col gap-[16px] items-start shrink-0 w-full">
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Nome completo</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="nome" autocomplete="name" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="Digite seu nome completo" />
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">E-mail</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input type="email" data-mask="email" autocomplete="email" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="Digite seu e-mail" />
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Celular</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="phone" inputmode="numeric" maxlength="15" autocomplete="tel" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="(00) 00000-0000" />
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">CPF</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="cpf" inputmode="numeric" maxlength="14" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="000.000.000-00" />
+            </div>
+          </div>
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Data de nascimento</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="date" inputmode="numeric" maxlength="10" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="dd/mm/aaaa" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[16px] items-center shrink-0 w-full">
+          <button id="cad-criar" class="bg-[#687bea] flex gap-[8px] h-[47px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0 w-full">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[22.4px]">Criar cadastro</span>
+          </button>
+          <button onclick="goTo(2)" class="border border-[#687bea] flex gap-[8px] h-[47px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0 w-full">
+            <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[22.4px]">Voltar</span>
+          </button>
+          <p class="font-normal fvs text-[12px] text-[#3b3b3b] tracking-[-0.12px] leading-[16.8px] w-full">*Ao continuar, você permite que seu Personal Banker Fran Tavares compartilhe seus dados pessoais com a Franq. Além disso, você aceita as <span class="text-[#687bea] underline">Políticas de Privacidade</span>, <span class="text-[#687bea] underline">Termos de Uso</span> e os <span class="text-[#687bea] underline">Termos de Autorização SCR.</span></p>
+        </div>
+      </div>
+
+      <div class="relative w-full h-[20px]">
+        <div class="absolute left-0 top-[13px] w-[44.51%] border-t border-[#ccc]"></div>
+        <div class="absolute left-[55.49%] top-[13px] w-[44.51%] border-t border-[#ccc]"></div>
+        <p class="absolute left-[48.07%] top-0 font-normal fvs text-[14px] text-[#3b3b3b] tracking-[-0.14px] leading-[19.6px]">ou</p>
+      </div>
+
+      <div class="flex flex-col gap-[12px] items-start shrink-0 w-full">
+        <button class="bg-white border-[0.5px] border-[#ccc] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] w-full">
+          <svg class="size-[18px] shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+          </svg>
+          <span class="font-medium fvs text-[16px] text-[#2e3944] text-center tracking-[-0.16px] leading-[22.4px]">Continuar com o Google</span>
+        </button>
+        <button class="bg-white border-[0.5px] border-[#ccc] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] w-full">
+          <svg class="size-[18px] shrink-0" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          <span class="font-medium fvs text-[16px] text-[#2e3944] text-center tracking-[-0.16px] leading-[22.4px]">Continuar com o Facebook</span>
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<!-- ============================ SCREEN: STEP 03 ============================ -->
+<section id="screen3" class="screen flex-col items-start w-full">
+  <div data-part="header"></div>
+
+  <!-- captura da página de contratação -->
+  <div class="relative w-full overflow-hidden" style="aspect-ratio:1440/758">
+    <img class="absolute h-[224.01%] left-[-16.67%] max-w-none top-[-24.01%] w-[133.33%]" src="assets/contratar.png" alt="Página de contratação" />
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<script>
+/* ---------- Partes compartilhadas (header, banner, footer) ---------- */
+const HEADER = `
+<div class="bg-[#131c25] flex items-center justify-between overflow-clip px-[49px] py-[31px] shrink-0 w-full">
+  <div class="h-[30px] relative shrink-0 w-[136.476px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/logo.svg" alt="FRANQ" /></div>
+  <div class="flex gap-[28px] items-center shrink-0">
+    <div class="relative flex items-center gap-[12px]">
+      <div class="relative size-[38px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/ellipse1965.png" alt="" /><img class="absolute left-[11px] top-[16px] size-[22px]" src="assets/group1000003590.svg" alt="" /></div>
+      <div class="h-[14px] w-[82px] relative"><img class="absolute inset-0 block max-w-none size-full" src="assets/lojadafran.svg" alt="Loja da Fran" /></div>
+      <img class="h-[5px] w-[11px]" src="assets/arrowsmall.svg" alt="" />
+      <div class="h-[44px] w-px bg-white/30 ml-[10px]"></div>
+    </div>
+    <div class="flex gap-[8px] items-center shrink-0">
+      <div class="relative size-[30px]">
+        <img class="absolute inset-0 block max-w-none size-full" src="assets/ellipse1966.svg" alt="" />
+        <svg class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[15px] h-[15px]" viewBox="0 0 448 512" fill="#ffffff"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"/></svg>
+      </div>
+      <p class="font-normal fvs text-[16px] text-white whitespace-nowrap">Olá, Ana Cláudia</p>
+    </div>
+  </div>
+</div>`;
+
+const BANNER = `
+<div class="relative overflow-clip flex flex-col gap-[24px] items-start px-[120px] py-[64px] shrink-0 w-full">
+  <div aria-hidden class="absolute inset-0 pointer-events-none">
+    <div class="absolute inset-0" style="background-image:linear-gradient(to right,#131c25,#334076)"></div>
+    <img class="absolute inset-0 w-full h-full object-cover opacity-25" style="mix-blend-mode:overlay" src="assets/banner.png" alt="" />
+  </div>
+  <div class="relative border border-[#f3f4f6] flex gap-[10px] items-center justify-center p-[16px] rounded-[40px] shrink-0">
+    <svg class="size-[24px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="17" cy="17" r="2" />
+    </svg>
+    <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px] whitespace-nowrap">Financiamento de Veículos</span>
+  </div>
+  <p class="font-nib relative text-[50px] text-white tracking-[-0.5px] w-[817px] leading-[1.2]">O seu veículo dos sonhos nunca esteve tão próximo!</p>
+  <div class="font-medium fvs relative text-[16px] text-white tracking-[-0.16px]">
+    <p class="leading-[25.6px]">As melhores opções de financiamento, de forma simples e rápida.</p>
+    <p class="leading-[25.6px]">Tudo com o apoio do seu Personal Banker.</p>
+  </div>
+</div>`;
+
+const FOOTER = `
+<div class="flex flex-col items-start shrink-0 w-full">
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-center justify-center pt-[40px] px-[120px] w-full">
+    <div class="h-[36px] relative w-[163.771px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/logo.svg" alt="FRANQ" /></div>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-start pt-[40px] px-[120px] w-full">
+    <div class="flex gap-[157px] items-start justify-center w-full">
+      <div class="flex flex-col gap-[12px] h-[140px] items-start justify-center text-white whitespace-nowrap">
+        <p class="font-bold fvs text-[24px] tracking-[-0.24px] leading-[33.6px]">Franq </p>
+        <div class="flex flex-col font-normal fvs gap-[8px] items-start text-[18px] tracking-[-0.18px] leading-[25.2px]">
+          <p>Sobre nós</p><p>Trabalhe na Franq</p><p>Termos de Uso e Política de Privacidade</p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-[12px] items-start text-white w-[219px]">
+        <p class="font-bold fvs text-[24px] tracking-[-0.24px] leading-[33.6px] whitespace-nowrap">Fale com a Franq</p>
+        <div class="flex flex-col font-normal fvs gap-[8px] items-start text-[18px] tracking-[-0.18px] leading-[25.2px] w-full">
+          <p class="whitespace-nowrap">+55 (48) 3205-3801</p><p class="whitespace-nowrap">contato@franq.com.br</p><p>Endereço</p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-[12px] items-start">
+        <p class="font-bold fvs text-[24px] text-white tracking-[-0.24px] leading-[33.6px] whitespace-nowrap">Conteúdos</p>
+        <div class="flex flex-col h-[74px] items-start justify-between w-full">
+          <p class="font-normal fvs text-[18px] text-white tracking-[-0.18px] leading-[25.2px] whitespace-nowrap">Blog</p>
+          <div class="flex items-center justify-between w-[166px]">
+            <span class="relative size-[24px] overflow-clip"><img class="absolute inset-[3.07%_6.62%_3.12%_6.64%] block max-w-none size-full" src="assets/linkedin.svg" alt="" /></span>
+            <span class="relative size-[24px] overflow-clip"><img class="absolute inset-[14.29%_3.57%] block max-w-none size-full" src="assets/youtube.svg" alt="" /></span>
+            <span class="relative size-[24px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/instagram.svg" alt="" /></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-center justify-center pt-[40px] px-[120px] w-full">
+    <p class="font-normal fvs text-[16px] text-[#999] text-center tracking-[-0.16px] leading-[22.4px] w-full">A Franq Tecnologia S.A. (CNPJ 32.709.829/0001-54) é uma plataforma de tecnologia que integra instituições financeiras a bancários autônomos, e realiza a divulgação de produtos por meio de seus correspondentes bancários WIN Correspondente Bancário LTDA (CNPJ 40.673.528/0001-46) e K.ZA Correspondente Bancário LTDA (CNPJ 42.637.945/0001-69), nos termos da Resolução CMN nº 4.935/21, operando com indicação de clientes e apoio administrativo para instituições financeiras parceiras. As informações contidas nesta página foram redigidas pelo nosso time de curadoria a partir de dados públicos do parceiro. A Franq não se responsabiliza por eventuais alterações nas características ou features dos produtos, assim como taxas, critérios de renda ou processos de contratação. A Franq não é uma instituição bancária ou agente de distribuição de qualquer tipo de produto financeiro ou securitário, valor mobiliário ou semelhantes. A Franq é uma plataforma que fornece aos nossos parceiros e agentes autônomos de investimentos, as ferramentas para a divulgação desses produtos e serviços. O trabalho da Franq e dos Personal Bankers não deve ser interpretado como consultoria financeira. Tanto a Franq como seus parceiros não cobram nenhum valor adiantado pela prestação de serviços ou concessão de crédito. Sempre desconfie de atividades fraudulentas.</p>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col items-center justify-center px-[120px] py-[40px] w-full">
+    <p class="font-normal fvs text-[16px] text-[#999] text-center tracking-[-0.16px] leading-[22.4px] w-full">Copyright © 2026. Franq CNPJ 32.709.829/0001-54 – "Franq" e a marca Franq são trademarks da empresa. Todos os direitos reservados. Av. Madre Benvenuta, 1313, Sta. Mônica – Florianópolis, Santa Catarina – Brasil</p>
+  </div>
+</div>`;
+
+document.querySelectorAll('[data-part="header"]').forEach(el => el.outerHTML = HEADER);
+document.querySelectorAll('[data-part="banner"]').forEach(el => el.outerHTML = BANNER);
+document.querySelectorAll('[data-part="footer"]').forEach(el => el.outerHTML = FOOTER);
+
+/* ---------- Navegação (interações do protótipo) ---------- */
+function goTo(step) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + step).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/* ---------- Toggle tipo de veículo (Seminovo / 0 Km) ---------- */
+document.querySelectorAll('[data-toggle-group]').forEach(group => {
+  const btns = group.querySelectorAll('.tipo-btn');
+  const screen = group.closest('.screen');
+  const placaField = screen ? screen.querySelector('[data-placa-field]') : null;
+  function syncPlaca() {
+    const sel = group.querySelector('.tipo-btn.selected');
+    const seminovo = sel && /Seminovo/i.test(sel.textContent);
+    if (placaField) placaField.style.display = seminovo ? '' : 'none';
+  }
+  btns.forEach(btn => btn.addEventListener('click', () => {
+    btns.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    syncPlaca();
+  }));
+  syncPlaca(); // estado inicial (Seminovo selecionado por padrão → placa visível)
+});
+
+/* ---------- Máscaras dos inputs ---------- */
+(function () {
+  const onlyDigits = s => (s || '').replace(/\D/g, '');
+  const masks = {
+    nome(v) { return (v || '').replace(/[^A-Za-zÀ-ÿÀ-ſ\s']/g, ''); },
+    email(v) { return (v || '').replace(/\s/g, '').toLowerCase(); },
+    phone(v) {
+      const d = onlyDigits(v).slice(0, 11);
+      if (d.length <= 2) return d.replace(/(\d{1,2})/, '($1');
+      if (d.length <= 6) return d.replace(/(\d{2})(\d{1,4})/, '($1) $2');
+      if (d.length <= 10) return d.replace(/(\d{2})(\d{4})(\d{1,4})/, '($1) $2-$3');
+      return d.replace(/(\d{2})(\d{5})(\d{1,4})/, '($1) $2-$3');
+    },
+    cpf(v) {
+      const d = onlyDigits(v).slice(0, 11);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return d.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+      if (d.length <= 9) return d.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    },
+    date(v) {
+      const d = onlyDigits(v).slice(0, 8);
+      if (d.length <= 2) return d;
+      if (d.length <= 4) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+      return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+    },
+    currency(v) {
+      const d = onlyDigits(v);
+      if (!d) return '';
+      return 'R$ ' + (parseInt(d, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  };
+  document.querySelectorAll('[data-mask]').forEach(inp => {
+    const fn = masks[inp.dataset.mask];
+    if (!fn) return;
+    if (inp.value) inp.value = fn(inp.value);
+    inp.addEventListener('input', () => {
+      inp.value = fn(inp.value);
+      try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+    });
+  });
+})();
+
+/* ---------- Validação do cadastro (mesmas regras do site no ar) ---------- */
+(function () {
+  const digits = s => (s || '').replace(/\D/g, '');
+  const validators = {
+    cpf: v => digits(v).length === 11,
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((v || '').trim()),
+    phone: v => digits(v).length === 11,
+    date: v => {
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((v || '').trim());
+      if (!m) return false;
+      const dd = +m[1], mm = +m[2], yy = +m[3];
+      if (mm < 1 || mm > 12 || dd < 1) return false;
+      if (dd > new Date(yy, mm, 0).getDate()) return false;
+      if (yy < 1900) return false;
+      return new Date(yy, mm - 1, dd) <= new Date();
+    },
+    nome: v => (v || '').trim().length >= 2
+  };
+  const messages = {
+    cpf: 'CPF deve estar no formato 000.000.000-00',
+    email: 'E-mail inválido.',
+    phone: 'Celular deve estar no formato (00) 00000-0000',
+    date: 'Data deve estar no formato DD/MM/AAAA',
+    nome: 'Nome deve ter pelo menos 2 caracteres'
+  };
+  const fieldOf = inp => inp.closest('.flex.flex-col') || inp.parentElement.parentElement;
+  function setError(inp, msg) {
+    inp.parentElement.style.borderColor = msg ? '#e02424' : '';
+    const field = fieldOf(inp);
+    let err = field.querySelector('.field-error');
+    if (msg) {
+      if (!err) { err = document.createElement('p'); err.className = 'field-error font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]'; field.appendChild(err); }
+      err.textContent = msg;
+    } else if (err) { err.remove(); }
+  }
+  function validate(inp, require) {
+    const fn = validators[inp.dataset.mask];
+    if (!fn) return true;
+    const val = inp.value.trim();
+    if (!val) { setError(inp, require ? 'Campo obrigatório.' : ''); return !require; }
+    const ok = fn(val); setError(inp, ok ? '' : messages[inp.dataset.mask]); return ok;
+  }
+  document.querySelectorAll('#screencad [data-mask]').forEach(inp => {
+    inp.addEventListener('input', () => validate(inp, false));
+    inp.addEventListener('blur', () => validate(inp, false));
+  });
+  const submit = document.getElementById('cad-criar');
+  if (submit) {
+    const label = submit.querySelector('span') || submit;
+    submit.addEventListener('click', () => {
+      const inps = [...document.querySelectorAll('#screencad [data-mask]')];
+      let firstBad = null;
+      inps.forEach(inp => { if (!validate(inp, true) && !firstBad) firstBad = inp; });
+      if (firstBad) { firstBad.focus(); return; }
+      const original = label.textContent;
+      label.textContent = 'Verificando...';
+      submit.disabled = true; submit.style.opacity = '0.7';
+      setTimeout(() => { label.textContent = original; submit.disabled = false; submit.style.opacity = ''; goTo(3); }, 1400);
+    });
+  }
+  document.querySelectorAll('#screencad button').forEach(btn => {
+    if (!/Continuar com o/.test(btn.textContent)) return;
+    const span = [...btn.querySelectorAll('span')].pop();
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const o = span.textContent;
+      span.textContent = 'Conectando...'; btn.disabled = true; btn.style.opacity = '0.7';
+      setTimeout(() => { span.textContent = o; btn.disabled = false; btn.style.opacity = ''; }, 1400);
+    });
+  });
+})();
+
+/* ---------- Simulador de financiamento (Step 02) ---------- */
+(function () {
+  const $ = id => document.getElementById(id);
+  const brl = s => { const d = (s || '').toString().replace(/\D/g, ''); return d ? parseInt(d, 10) / 100 : 0; };
+  const fmt = n => 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const TAXA = 0.015;           // taxa de juros mensal de referência (1,5% a.m.)
+  const ENTRADA_MIN = 0.20;     // entrada mínima sugerida: 20% do valor do veículo
+  const COMPROMETIMENTO = 0.30; // 30% de comprometimento de renda
+  const FIPE_TOL = 0.15;        // trava: valor do veículo até ±15% do valor de tabela FIPE
+
+  const veiculo = $('s2-veiculo');
+  const entrada = $('s2-entrada');
+  const pct = $('s2-entrada-pct');
+  const hint = $('s2-entrada-hint');
+  const fin = $('s2-financiamento');
+  const parcelas = $('s2-parcelas');
+  const parcela = $('s2-parcela');
+  const renda = $('s2-renda');
+  const status = $('s2-chance-status');
+  const arrow = $('s2-arrow');
+  const here = $('s2-here');
+  const fipeHint = $('s2-fipe-hint');
+  if (!veiculo) return;
+
+  let entradaTocada = false;
+  let fipeRef = brl(veiculo.value) || 0;   // valor de referência da tabela FIPE
+
+  // Tabela FIPE (simulada): valores-base de referência (ano 2024); depreciação ~7% por ano
+  const FIPE = {
+    'Volkswagen': { 'Gol 1.0 Flex': 48000, 'Polo 1.0 TSI': 82000, 'Nivus 1.0 TSI': 120000, 'T-Cross 1.4 TSI': 145000 },
+    'Chevrolet':  { 'Onix 1.0 Turbo': 80000, 'Tracker 1.2 Turbo': 125000, 'Spin 1.8': 110000, 'S10 2.8 Diesel': 230000 },
+    'Fiat':       { 'Mobi 1.0': 62000, 'Argo 1.0': 72000, 'Strada 1.4': 98000, 'Toro 1.3 Turbo': 150000 },
+    'Toyota':     { 'Yaris 1.5': 110000, 'Corolla 2.0': 165000, 'Corolla Cross 2.0': 200000, 'Hilux 2.8 Diesel': 290000 },
+    'Honda':      { 'Fit 1.5': 95000, 'City 1.5': 120000, 'HR-V 1.5': 160000, 'Civic 2.0': 185000 },
+    'Hyundai':    { 'HB20 1.0': 78000, 'Creta 1.0 Turbo': 135000, 'Tucson 1.6 Turbo': 210000 },
+    'Ford':       { 'Ka 1.0': 60000, 'Ranger 3.0 Diesel': 300000, 'Territory 1.5 Turbo': 190000 },
+    'Renault':    { 'Kwid 1.0': 65000, 'Duster 1.6': 120000, 'Oroch 1.6': 130000 }
+  };
+  function fipeValor(ma, mo, anoTxt) {
+    if (!FIPE[ma] || !FIPE[ma][mo]) return 0;
+    const mm = (anoTxt || '').match(/\d{4}/); if (!mm) return 0;
+    const ano = parseInt(mm[0], 10);
+    const factor = Math.max(0.35, Math.min(1, 1 - (2024 - ano) * 0.07));
+    return Math.round(FIPE[ma][mo] * factor / 100) * 100;
+  }
+  function popularMarcas(sel) {
+    if (!sel) return;
+    sel.innerHTML = '<option value="" disabled selected>Selecione</option>' + Object.keys(FIPE).map(b => '<option>' + b + '</option>').join('');
+  }
+  function popularModelos(marcaSel, modeloSel) {
+    const ms = FIPE[marcaSel.value] ? Object.keys(FIPE[marcaSel.value]) : [];
+    modeloSel.innerHTML = '<option value="" disabled selected>' + (ms.length ? 'Selecione' : 'Selecione a marca primeiro') + '</option>' + ms.map(m => '<option>' + m + '</option>').join('');
+    modeloSel.disabled = ms.length === 0;
+  }
+
+  function faixaFipe() { return { min: fipeRef * (1 - FIPE_TOL), max: fipeRef * (1 + FIPE_TOL) }; }
+  function foraDaFaixa() {
+    if (fipeRef <= 0) return false;
+    const v = brl(veiculo.value), f = faixaFipe();
+    return v > 0 && (v > f.max + 0.005 || v < f.min - 0.005);
+  }
+  // valor é editável; a mensagem fica vermelha quando sai de ±15% da FIPE
+  const continuarBtn = $('s2-continuar');
+  function mostraFaixaFipe() {
+    const fora = fipeRef > 0 && foraDaFaixa();
+    // fora da faixa: bloqueia o avanço (botão esmaecido)
+    if (continuarBtn) { continuarBtn.style.opacity = fora ? '0.5' : ''; continuarBtn.title = fora ? 'Ajuste o valor do veículo para dentro de ±15% da FIPE' : ''; }
+    if (!fipeHint) return;
+    if (!fora) { fipeHint.textContent = ''; return; }
+    const f = faixaFipe();
+    fipeHint.style.color = '#e02424';
+    fipeHint.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(f.min) + ' a ' + fmt(f.max) + '.';
+  }
+  // só segue para o cadastro se o valor estiver dentro de ±15% da FIPE
+  window.continuarProposta = function () {
+    if (foraDaFaixa()) { mostraFaixaFipe(); veiculo.focus(); return; }
+    goTo('cad');
+  };
+
+  // Marca/Modelo (Step 2) → preenche o valor do veículo pela FIPE
+  const marcaEl = $('s2-marca'), modeloEl = $('s2-modelo'), anoEl = $('s2-ano');
+  popularMarcas(marcaEl);
+  function preencheFipeS2() {
+    const v = fipeValor(marcaEl.value, modeloEl.value, anoEl.value);
+    if (v > 0) {
+      fipeRef = v;
+      veiculo.value = fmt(v);
+      entradaTocada = false;
+      entrada.value = fmt(v * ENTRADA_MIN);
+      update('entrada');
+      mostraFaixaFipe();
+    }
+  }
+  if (marcaEl) marcaEl.addEventListener('change', () => { popularModelos(marcaEl, modeloEl); });
+  if (modeloEl) modeloEl.addEventListener('change', preencheFipeS2);
+  if (anoEl) anoEl.addEventListener('change', () => { if (marcaEl.value && modeloEl.value) preencheFipeS2(); });
+
+  // Placa (opcional): se reconhecida, preenche tipo/marca/modelo/ano + valor (FIPE)
+  const PLACAS = {
+    'FAE6166': { tipo: 'Veículos leves', marca: 'Ford', modelo: 'Ka 1.0', ano: '2019 - Gasolina' },
+    'ABC1D23': { tipo: 'Veículos leves', marca: 'Volkswagen', modelo: 'Gol 1.0 Flex', ano: '2020 - Flex' },
+    'RST4E56': { tipo: 'Veículos leves', marca: 'Honda', modelo: 'Civic 2.0', ano: '2022 - Gasolina' },
+    'KLM8F90': { tipo: 'Veículos pesados', marca: 'Toyota', modelo: 'Hilux 2.8 Diesel', ano: '2021 - Diesel' }
+  };
+  function normalizaPlaca(s) { return (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7); }
+  const placaEl2 = $('s2-placa'), placaErro2 = $('s2-placa-erro');
+  window.buscarPlacaS2 = function () {
+    const v = normalizaPlaca(placaEl2.value);
+    if (!v) { if (placaErro2) placaErro2.style.display = 'none'; return; }
+    const d = PLACAS[v];
+    if (!d) { if (placaErro2) placaErro2.style.display = 'block'; return; }
+    if (placaErro2) placaErro2.style.display = 'none';
+    $('s2-tipo').value = d.tipo;
+    marcaEl.value = d.marca; popularModelos(marcaEl, modeloEl); modeloEl.value = d.modelo;
+    anoEl.value = d.ano;
+    preencheFipeS2();
+  };
+  if (placaEl2) {
+    placaEl2.addEventListener('input', () => { placaEl2.value = normalizaPlaca(placaEl2.value); if (placaErro2) placaErro2.style.display = 'none'; });
+    placaEl2.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.buscarPlacaS2(); } });
+  }
+
+  // entrada + financiamento = valor do veículo. `source` indica qual campo o usuário mexeu,
+  // para recalcular o outro sem sobrescrever o que está sendo digitado.
+  function update(source) {
+    const vVeiculo = brl(veiculo.value);
+    let vEntrada, vFin;
+
+    if (source === 'fin') {
+      vFin = brl(fin.value);
+      if (vFin > vVeiculo) vFin = vVeiculo;
+      vEntrada = Math.max(0, vVeiculo - vFin);
+      entrada.value = vVeiculo ? fmt(vEntrada) : '';
+    } else {
+      vEntrada = brl(entrada.value);
+      if (vEntrada > vVeiculo) vEntrada = vVeiculo;
+      vFin = Math.max(0, vVeiculo - vEntrada);
+      fin.value = vVeiculo ? fmt(vFin) : '';
+    }
+
+    const perc = vVeiculo > 0 ? (vEntrada / vVeiculo) * 100 : 0;
+    pct.textContent = Math.round(perc) + '%';
+    hint.textContent = 'Entrada sugerida: 20% do valor do veículo (' + fmt(vVeiculo * ENTRADA_MIN) + ').';
+    renda.textContent = 'Renda mensal sugerida: a partir de ' + fmt(vFin * COMPROMETIMENTO);
+
+    // parcela (Tabela Price) — só calcula quando um prazo é escolhido
+    const n = parseInt(parcelas.value, 10);
+    parcela.textContent = (n > 0 && vFin > 0) ? fmt(vFin * TAXA / (1 - Math.pow(1 + TAXA, -n))) : 'R$';
+
+    // chance de aprovação conforme % de entrada
+    let label, cor;
+    if (perc < 20) { label = 'Baixa'; cor = '#e53d3d'; }
+    else if (perc < 30) { label = 'Média'; cor = '#e8ba26'; }
+    else if (perc < 50) { label = 'Boa'; cor = '#f29426'; }
+    else { label = 'Alta'; cor = '#33c759'; }
+    status.textContent = label;
+    status.style.color = cor;
+
+    const x = Math.max(0, Math.min(100, perc)) / 100 * 413.5;
+    arrow.style.left = x + 'px';
+    if (here) here.style.left = Math.max(0, Math.min(x - 30, 360)) + 'px';
+  }
+
+  // editar o valor do veículo: mostra "atualizando..." e recalcula em tempo real (com leve atraso)
+  const loadingEl = $('s2-loading');
+  let loadTimer = null;
+  veiculo.addEventListener('input', () => {
+    if (loadingEl) loadingEl.style.display = 'flex';
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => {
+      if (!entradaTocada) {
+        const v = brl(veiculo.value);
+        entrada.value = v ? fmt(v * ENTRADA_MIN) : '';
+      }
+      update('entrada');
+      mostraFaixaFipe();
+      if (loadingEl) loadingEl.style.display = 'none';
+    }, 900);
+  });
+  // editar a entrada recalcula o financiamento; editar o financiamento recalcula a entrada
+  entrada.addEventListener('input', () => { entradaTocada = true; update('entrada'); });
+  fin.addEventListener('input', () => { entradaTocada = true; update('fin'); });
+  parcelas.addEventListener('change', () => update('entrada'));
+
+  // leva os valores informados na Step 01 para o simulador
+  window.simular = function () {
+    // não segue com a simulação se o valor estiver fora de ±15% da FIPE
+    if (window.__s1Fora && window.__s1Fora()) { const sv = $('s1-veiculo'); if (sv) sv.focus(); return; }
+    const v1 = $('s1-veiculo'), t1 = $('s1-tipo'), a1 = $('s1-ano'), m1 = $('s1-marca'), mo1 = $('s1-modelo');
+    if (t1 && t1.value) $('s2-tipo').value = t1.value;
+    if (m1 && m1.value) { marcaEl.value = m1.value; popularModelos(marcaEl, modeloEl); if (mo1 && mo1.value) modeloEl.value = mo1.value; }
+    if (a1 && a1.value) anoEl.value = a1.value;
+    if (v1 && brl(v1.value) > 0) {
+      fipeRef = brl(v1.value);               // valor (FIPE) da Step 1 = referência
+      veiculo.value = fmt(fipeRef);
+      entradaTocada = false;
+      entrada.value = fmt(fipeRef * ENTRADA_MIN);
+    }
+    update('entrada');
+    mostraFaixaFipe();
+    goTo(2);
+  };
+
+  update('entrada');   // estado inicial coerente
+  mostraFaixaFipe();   // faixa permitida da FIPE
+
+  // ----- Step 1: Marca/Modelo + FIPE (preenche o valor; aviso de ±15%) -----
+  (function () {
+    const marca = $('s1-marca'), modelo = $('s1-modelo'), ano1 = $('s1-ano'), valor1 = $('s1-veiculo'), hint1 = $('s1-fipe-hint');
+    if (!marca || !valor1) return;
+    let ref1 = 0;
+    const simularBtn = $('s1-simular');
+    popularMarcas(marca);
+    function s1Fora() {
+      if (ref1 <= 0) return false;
+      const min = ref1 * (1 - FIPE_TOL), max = ref1 * (1 + FIPE_TOL), v = brl(valor1.value);
+      return v > 0 && (v > max + 0.005 || v < min - 0.005);
+    }
+    window.__s1Fora = s1Fora;
+    function mostra1() {
+      const fora = s1Fora();
+      // fora da faixa: bloqueia o avanço (botão esmaecido)
+      if (simularBtn) { simularBtn.style.opacity = fora ? '0.5' : ''; simularBtn.title = fora ? 'Ajuste o valor do veículo para dentro de ±15% da FIPE' : ''; }
+      if (!hint1) return;
+      if (!fora) { hint1.textContent = ''; return; }
+      const min = ref1 * (1 - FIPE_TOL), max = ref1 * (1 + FIPE_TOL);
+      hint1.style.color = '#e02424';
+      hint1.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(min) + ' a ' + fmt(max) + '.';
+    }
+    function calc1() {
+      const v = fipeValor(marca.value, modelo.value, ano1.value);
+      if (v > 0) { ref1 = v; valor1.value = fmt(v); mostra1(); }
+    }
+    marca.addEventListener('change', () => { popularModelos(marca, modelo); });
+    modelo.addEventListener('change', calc1);
+    ano1.addEventListener('change', () => { if (marca.value && modelo.value) calc1(); });
+    valor1.addEventListener('input', mostra1);
+
+    // Placa (opcional) na Step 1
+    const placaEl1 = $('s1-placa'), placaErro1 = $('s1-placa-erro');
+    window.buscarPlacaS1 = function () {
+      const v = (placaEl1.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+      if (!v) { if (placaErro1) placaErro1.style.display = 'none'; return; }
+      const d = PLACAS[v];
+      if (!d) { if (placaErro1) placaErro1.style.display = 'block'; return; }
+      if (placaErro1) placaErro1.style.display = 'none';
+      $('s1-tipo').value = d.tipo;
+      marca.value = d.marca; popularModelos(marca, modelo); modelo.value = d.modelo;
+      ano1.value = d.ano;
+      calc1();
+    };
+    if (placaEl1) {
+      placaEl1.addEventListener('input', () => { placaEl1.value = placaEl1.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7); if (placaErro1) placaErro1.style.display = 'none'; });
+      placaEl1.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.buscarPlacaS1(); } });
+    }
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulador Auto Equity — Franq</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body { font-family: 'DM Sans', sans-serif; }
+  /* Nib Pro is a proprietary display serif used in the Figma file; closest free fallback */
+  .font-nib { font-family: 'Nib Pro', Georgia, 'Times New Roman', serif; }
+  .fvs { font-variation-settings: 'opsz' 14; }
+  .screen { display: none; }
+  .screen.active { display: flex; }
+  *, *::before, *::after { box-sizing: border-box; }
+  #sliderHandle { touch-action: none; }
+  #sliderHandle:active { cursor: grabbing; }
+  /* foco azul nos campos do cadastro (igual ao site no ar) — borda vermelha de erro (inline) tem prioridade */
+  #screen6 .border:focus-within { border-color: #687bea; }
+  #screen6 button { cursor: pointer; transition: filter .15s ease, opacity .15s ease; }
+  #screen6 button:hover:not([disabled]) { filter: brightness(0.96); }
+  #screen6 button:active:not([disabled]) { filter: brightness(0.92); }
+  #screen6 button[disabled] { cursor: progress; }
+</style>
+</head>
+<body>
+
+<!-- ============================ SCREEN: STEP 4 ============================ -->
+<section id="screen4" class="screen active flex-col items-start w-full">
+  <div data-part="header"></div>
+  <div data-part="banner"></div>
+
+  <!-- content -->
+  <div class="bg-white flex gap-[100px] items-start justify-center px-[16px] py-[64px] w-full">
+    <!-- form -->
+    <div class="flex flex-col gap-[42px] items-start justify-center shrink-0 w-[584px]">
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <!-- title + line -->
+        <div class="flex flex-col items-start shrink-0 w-full">
+          <div class="w-full">
+            <p class="font-medium fvs text-[#0d062d] text-[20px] tracking-[-0.2px] leading-[32px] mb-[12px]">Informe os dados para começar a simulação</p>
+            <div class="h-px w-full bg-[#e9e9e9]"></div>
+          </div>
+        </div>
+
+        <!-- placa -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Informe a placa do veículo:</p>
+          <div id="ae-placa-box" class="border border-[#ccc] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <input id="ae-placa" data-mask="placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" value="FAE6166" />
+            <button type="button" onclick="buscarPlaca()" aria-label="Buscar placa" class="shrink-0 flex items-center justify-center cursor-pointer">
+              <img class="size-[14px] object-contain" src="assets/search.svg" alt="" />
+            </button>
+          </div>
+          <p id="ae-placa-erro" class="font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]" style="display:none">Placa não encontrada. Tente novamente.</p>
+        </div>
+
+        <!-- marca (locked) -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Marca do veículo</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p id="ae-marca" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <!-- modelo (locked) -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Modelo do veículo</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p id="ae-modelo" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <!-- ano (locked) -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo e combustível</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p id="ae-ano" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <!-- fipe (locked) -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor do veiculo na tabela FIPE</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p id="ae-fipe" class="font-medium fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">R$ 0,00</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <!-- renda -->
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Renda líquida do cliente:</p>
+          <div class="border border-[#e5e7eb] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+            <input data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
+          </div>
+        </div>
+      </div>
+
+      <!-- buttons -->
+      <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
+        <button onclick="goTo(5)" class="flex gap-[24px] items-center justify-end shrink-0">
+          <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Simular empréstimo</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- right panel: simulador desabilitado -->
+    <div class="flex flex-col items-center justify-center shrink-0">
+      <div class="flex flex-col gap-[36px] items-start shrink-0 w-[517px]">
+        <div class="flex flex-col items-start w-full">
+          <p class="font-medium fvs text-[20px] text-black tracking-[-0.2px] leading-[32px] mb-[2px]">Resultado da sua simulação</p>
+          <div class="h-px w-full bg-[#e9e9e9]"></div>
+        </div>
+        <div class="relative w-[517px] h-[451px]">
+          <div class="absolute inset-0 top-[1px] bg-[rgba(243,245,252,0.4)] rounded-[17.167px]"></div>
+          <div class="absolute inset-0 bg-[rgba(243,245,252,0.4)] rounded-[17.167px]"></div>
+          <div class="absolute left-1/2 -translate-x-1/2 top-[86px] flex flex-col gap-[32px] items-center">
+            <img class="w-[177.077px] h-[184.067px]" src="assets/illus_step4.svg" alt="" />
+            <div class="flex flex-col gap-[12px] items-center text-[#0d062d]">
+              <p class="font-medium fvs text-[22px] text-center w-[412px] leading-[28px]">Falta pouco para habilitar o simulador!</p>
+              <p class="font-normal fvs text-[18px] text-center w-[458px] leading-[26px]">Informe ao lado os dados do veículo para continuar com a simulação.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<!-- ============================ SCREEN: STEP 5 ============================ -->
+<section id="screen5" class="screen flex-col items-start w-full">
+  <div data-part="header"></div>
+  <div data-part="banner"></div>
+
+  <div class="bg-white flex gap-[100px] items-start justify-center px-[16px] py-[64px] w-full">
+    <!-- form (preenchido) -->
+    <div class="flex flex-col gap-[42px] items-start justify-center shrink-0 w-[584px]">
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <div class="flex flex-col items-start shrink-0 w-full">
+          <div class="w-full">
+            <p class="font-medium fvs text-[#0d062d] text-[20px] tracking-[-0.2px] leading-[32px] mb-[12px]">Informe os dados para começar a simulação</p>
+            <div class="h-px w-full bg-[#e9e9e9]"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Informe a placa do veículo:</p>
+          <div class="border border-[#ccc] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <input data-mask="placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" value="FAE6166" />
+            <img class="size-[14px] shrink-0 object-contain" src="assets/search.svg" alt="" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Marca do veículo</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">FORD</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Modelo do veículo</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">ECOSPORT XLT FREESTYLE 1.6 FLEX 8V 5P</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo e combustível</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">2012 Alcool / Gasolina</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor do veiculo na tabela FIPE</p>
+          <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+            <p class="font-medium fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">R$ 41.385,00</p>
+            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Renda líquida do cliente:</p>
+          <div class="border border-[#e5e7eb] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+            <input data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" value="R$ 15.000,00" />
+          </div>
+        </div>
+      </div>
+
+      <!-- botão voltar -->
+      <div class="bg-white flex gap-[40px] items-center overflow-clip shrink-0 w-full">
+        <button onclick="goTo(4)" class="border border-[#687bea] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0">
+          <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Voltar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- right panel: resultado -->
+    <div class="flex flex-col h-[754px] items-center justify-between shrink-0 w-[522px]">
+      <div class="flex flex-col gap-[36px] items-start pb-[28px] shrink-0 w-[517px]">
+        <div class="flex flex-col items-start w-full">
+          <p class="font-medium fvs text-[20px] text-black tracking-[-0.2px] leading-[32px] mb-[2px]">Resultado da sua simulação</p>
+          <div class="h-px w-full bg-[#e9e9e9]"></div>
+        </div>
+
+        <!-- card -->
+        <div class="bg-[#fafaff] flex flex-col gap-[24px] items-start p-[28px] rounded-[16px] shrink-0 w-full">
+          <!-- valor do empréstimo -->
+          <div class="flex flex-col gap-[6px] items-start shrink-0 w-full">
+            <div class="flex flex-col gap-[2px] items-start w-full">
+              <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Qual o valor do empréstimo?</p>
+              <div class="w-full">
+                <p class="font-medium fvs text-[24px] text-black tracking-[-0.24px] leading-[38.4px]">R$ 29.692,50</p>
+                <div class="h-px w-full bg-[#d9d9d9]"></div>
+              </div>
+            </div>
+            <p class="font-normal fvs text-[12px] text-[#808080] tracking-[-0.12px] leading-[19.2px]">O valor máximo de empréstimo sugerido para esta garantia é de R$ 20.692,50</p>
+          </div>
+
+          <!-- slider prazo -->
+          <div class="relative h-[88px] w-[461px]" id="sliderArea">
+            <p class="absolute left-0 top-0 font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Prazo de pagamento em meses</p>
+            <div class="absolute left-[20px] top-[59px] h-[9px] w-[402px] bg-[#ececec] rounded-full"></div>
+            <div id="sliderFill" class="absolute left-[20px] top-[59px] h-[9px] bg-[#687bea] rounded-full" style="width:362px"></div>
+            <div class="absolute left-0 top-[38px] size-[50px] bg-white border border-[#ccc] rounded-[8px] flex items-center justify-center">
+              <span class="font-normal fvs text-[16px] text-[#7f7f7f] tracking-[-0.16px]">12</span>
+            </div>
+            <div class="absolute left-[411px] top-[38px] size-[50px] bg-white border border-[#ccc] rounded-[8px] flex items-center justify-center">
+              <span class="font-normal fvs text-[16px] text-[#7f7f7f] tracking-[-0.16px]">72</span>
+            </div>
+            <div id="sliderHandle" class="absolute top-[38px] -translate-x-1/2 h-[50px] bg-[#687bea] rounded-[8px] flex items-center gap-[11px] px-[14px] cursor-grab select-none" style="left:400px">
+              <span class="flex h-[10px] items-center justify-center w-[5px]"><span class="rotate-90"><img class="w-[10px] h-[5px] block" src="assets/chev_l.svg" alt="" /></span></span>
+              <span id="sliderMonths" class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">36</span>
+              <span class="flex h-[10px] items-center justify-center w-[5px]"><span class="-rotate-90"><img class="w-[10px] h-[5px] block" src="assets/chev_r.svg" alt="" /></span></span>
+            </div>
+          </div>
+
+          <p class="font-normal fvs text-[12px] text-[#808080] tracking-[-0.12px] leading-[19.2px] w-full">Deslize a barra para alterar o prazo.</p>
+
+          <!-- valor da parcela -->
+          <div class="flex flex-col gap-[2px] items-start justify-center shrink-0 w-[460px]">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Valor aproximado da parcela:</p>
+            <p id="parcelaValor" class="font-medium fvs text-[24px] text-[#687bea] tracking-[-0.24px] leading-[38.4px]">R$ 832,83</p>
+          </div>
+
+          <p class="italic font-normal fvs text-[12px] text-[#6b7280] leading-[1.39] w-full">*Apenas para fins de simulação. Taxas e valores sujeitos à aprovação de crédito e às demais condições do produto vigentes no momento da contratação.</p>
+        </div>
+      </div>
+
+      <p class="font-semibold fvs text-[#374151] text-[18px] leading-[28px] w-full">Para dar continuidade à proposta, precisamos que você crie uma conta. Assim, seu personal banker poderá acompanhar seu processo de forma personalizada e segura.</p>
+
+      <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
+        <button onclick="goTo(6)" class="flex gap-[24px] items-center justify-end shrink-0">
+          <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Cadastre-se</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<!-- ============================ SCREEN: STEP 6 ============================ -->
+<section id="screen6" class="screen flex-col items-start w-full">
+  <div data-part="header"></div>
+
+  <!-- Cadastro -->
+  <div class="bg-white relative h-[1062px] overflow-hidden w-full flex">
+    <!-- Banner -->
+    <div class="relative bg-white h-full overflow-hidden shrink-0 basis-[45.5%] min-w-0">
+      <div class="absolute inset-0">
+        <img class="absolute inset-0 w-full h-full object-cover opacity-70 -scale-x-100" src="assets/partners.jpg" alt="" />
+        <div class="absolute inset-0 bg-[rgba(0,0,0,0.5)]"></div>
+      </div>
+      <div class="absolute flex items-center justify-center left-[176.16px] size-[661.454px] top-[-93.37px]">
+        <div class="-rotate-[165deg]">
+          <img class="block relative size-[540.075px]" src="assets/ellipse1945.svg" alt="" />
+        </div>
+      </div>
+      <img class="absolute -translate-x-1/2 left-[calc(50%-334.76px)] size-[470.746px] top-[613.79px] block" src="assets/ellipse1944.svg" alt="" />
+      <div class="absolute inset-0" style="background-image:linear-gradient(179.97deg, rgb(19,28,37) 0%, rgba(19,28,37,0.115) 19.51%, rgba(19,28,37,0.108) 43%, rgba(19,28,37,0.061) 69.49%, rgba(19,28,37,0) 99.98%)"></div>
+      <div class="absolute inset-0" style="background-image:linear-gradient(179.97deg, rgba(19,28,37,0) 0%, rgba(19,28,37,0.058) 19.51%, rgba(19,28,37,0.054) 43%, rgba(19,28,37,0.03) 69.49%, rgba(19,28,37,0.5) 99.97%)"></div>
+      <p class="font-nib absolute leading-[1.1] left-[calc(50%-267px)] text-[#e2ece4] text-[48px] top-[calc(50%+264px)] tracking-[-0.96px] w-[336.439px]">Tenha assessoria exclusiva </p>
+    </div>
+
+    <!-- Form de cadastro -->
+    <div class="flex-1 min-w-0 h-full flex items-center justify-center px-[40px]">
+    <div class="flex flex-col gap-[16px] items-start w-[477px]">
+      <img class="h-[32px] w-[31.959px] shrink-0" src="assets/simboloazul.svg" alt="" />
+      <p class="font-nib leading-[44.8px] text-[32px] text-black tracking-[-0.32px] w-full">Cadastre-se</p>
+
+      <div class="flex flex-col gap-[24px] items-start shrink-0 w-full">
+        <div class="flex flex-col gap-[16px] items-start shrink-0 w-full">
+          <!-- nome -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Nome completo</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="nome" autocomplete="name" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="Digite seu nome completo" />
+            </div>
+          </div>
+          <!-- email -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">E-mail</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input type="email" data-mask="email" autocomplete="email" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="Digite seu e-mail" />
+            </div>
+          </div>
+          <!-- celular -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Celular</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="phone" inputmode="numeric" maxlength="15" autocomplete="tel" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="(00) 00000-0000" />
+            </div>
+          </div>
+          <!-- cpf -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">CPF</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="cpf" inputmode="numeric" maxlength="14" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="000.000.000-00" />
+            </div>
+          </div>
+          <!-- nascimento -->
+          <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+            <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[22.4px]">Data de nascimento</p>
+            <div class="border border-[#ccc] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+              <input data-mask="date" inputmode="numeric" maxlength="10" class="font-normal fvs text-[16px] text-[#999] tracking-[-0.16px] leading-[22.4px] bg-transparent outline-none w-full" placeholder="dd/mm/aaaa" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[16px] items-center shrink-0 w-full">
+          <button class="bg-[#687bea] flex gap-[8px] h-[47px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0 w-full">
+            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[22.4px]">Criar cadastro</span>
+          </button>
+          <button onclick="goTo(5)" class="border border-[#687bea] flex gap-[8px] h-[47px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0 w-full">
+            <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[22.4px]">Voltar</span>
+          </button>
+          <p class="font-normal fvs text-[12px] text-[#3b3b3b] tracking-[-0.12px] leading-[16.8px] w-full">*Ao continuar, você permite que seu Personal Banker Fran Tavares compartilhe seus dados pessoais com a Franq. Além disso, você aceita as <span class="text-[#687bea] underline">Políticas de Privacidade</span>, <span class="text-[#687bea] underline">Termos de Uso</span> e os <span class="text-[#687bea] underline">Termos de Autorização SCR.</span></p>
+        </div>
+      </div>
+
+      <!-- divisor ou -->
+      <div class="relative w-full h-[20px]">
+        <div class="absolute left-0 top-[13px] w-[44.51%] border-t border-[#ccc]"></div>
+        <div class="absolute left-[55.49%] top-[13px] w-[44.51%] border-t border-[#ccc]"></div>
+        <p class="absolute left-[48.07%] top-0 font-normal fvs text-[14px] text-[#3b3b3b] tracking-[-0.14px] leading-[19.6px]">ou</p>
+      </div>
+
+      <!-- social -->
+      <div class="flex flex-col gap-[12px] items-start shrink-0 w-full">
+        <button class="bg-white border-[0.5px] border-[#ccc] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] w-full">
+          <svg class="size-[18px] shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+          </svg>
+          <span class="font-medium fvs text-[16px] text-[#2e3944] text-center tracking-[-0.16px] leading-[22.4px]">Continuar com o Google</span>
+        </button>
+        <button class="bg-white border-[0.5px] border-[#ccc] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] w-full">
+          <svg class="size-[18px] shrink-0" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          <span class="font-medium fvs text-[16px] text-[#2e3944] text-center tracking-[-0.16px] leading-[22.4px]">Continuar com o Facebook</span>
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div data-part="footer"></div>
+</section>
+
+<script>
+/* ---------- Shared parts (header, banner, footer) ---------- */
+const HEADER = `
+<div class="bg-[#131c25] flex items-center justify-between overflow-clip px-[49px] py-[31px] shrink-0 w-full">
+  <div class="h-[30px] relative shrink-0 w-[136.476px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/logo.svg" alt="FRANQ" /></div>
+  <div class="flex gap-[28px] items-center shrink-0">
+    <div class="relative flex items-center gap-[12px]">
+      <div class="relative size-[38px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/ellipse1965.png" alt="" /><img class="absolute left-[11px] top-[16px] size-[22px]" src="assets/group1000003590.svg" alt="" /></div>
+      <div class="h-[14px] w-[82px] relative"><img class="absolute inset-0 block max-w-none size-full" src="assets/lojadafran.svg" alt="Loja da Fran" /></div>
+      <img class="h-[5px] w-[11px]" src="assets/arrowsmall.svg" alt="" />
+      <div class="h-[44px] w-px bg-white/30 ml-[10px]"></div>
+    </div>
+    <div class="flex gap-[8px] items-center shrink-0">
+      <div class="relative size-[30px]">
+        <img class="absolute inset-0 block max-w-none size-full" src="assets/ellipse1966.svg" alt="" />
+        <svg class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[15px] h-[15px]" viewBox="0 0 448 512" fill="#ffffff"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"/></svg>
+      </div>
+      <p class="font-normal fvs text-[16px] text-white whitespace-nowrap">Olá, Ana Cláudia</p>
+    </div>
+  </div>
+</div>`;
+
+const BANNER = `
+<div class="relative overflow-clip flex flex-col gap-[24px] items-start px-[120px] py-[64px] shrink-0 w-full">
+  <div aria-hidden class="absolute inset-0 pointer-events-none">
+    <div class="absolute inset-0" style="background-image:linear-gradient(to right,#131c25,#334076)"></div>
+    <img class="absolute inset-0 w-full h-full object-cover opacity-25" style="mix-blend-mode:overlay" src="assets/banner.png" alt="" />
+  </div>
+  <div class="relative border border-[#f3f4f6] flex gap-[10px] items-center justify-center p-[16px] rounded-[40px] shrink-0">
+    <svg class="size-[24px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="17" cy="17" r="2" />
+    </svg>
+    <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px] whitespace-nowrap">Empréstimo com Garantia de Veículo</span>
+  </div>
+  <p class="font-nib relative text-[50px] text-white tracking-[-0.5px] w-[817px] leading-[1.2]">Não deixe o tempo passar, transforme o seu veículo em dinheiro agora!</p>
+  <div class="font-medium fvs relative text-[16px] text-white tracking-[-0.16px]">
+    <p class="leading-[25.6px]">Realize seus objetivos com crédito rápido e descomplicado, usando seu veículo como garantia</p>
+    <p class="leading-[25.6px]">Tudo com o apoio do seu Personal Banker.</p>
+  </div>
+</div>`;
+
+const FOOTER = `
+<div class="flex flex-col items-start shrink-0 w-full">
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-center justify-center pt-[40px] px-[120px] w-full">
+    <div class="h-[36px] relative w-[163.771px]">
+      <img class="absolute inset-0 block max-w-none size-full" src="assets/logo.svg" alt="FRANQ" />
+    </div>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-start pt-[40px] px-[120px] w-full">
+    <div class="flex gap-[157px] items-start justify-center w-full">
+      <div class="flex flex-col gap-[12px] h-[140px] items-start justify-center text-white whitespace-nowrap">
+        <p class="font-bold fvs text-[24px] tracking-[-0.24px] leading-[33.6px]">Franq </p>
+        <div class="flex flex-col font-normal fvs gap-[8px] items-start text-[18px] tracking-[-0.18px] leading-[25.2px]">
+          <p>Sobre nós</p><p>Trabalhe na Franq</p><p>Termos de Uso e Política de Privacidade</p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-[12px] items-start text-white w-[219px]">
+        <p class="font-bold fvs text-[24px] tracking-[-0.24px] leading-[33.6px] whitespace-nowrap">Fale com a Franq</p>
+        <div class="flex flex-col font-normal fvs gap-[8px] items-start text-[18px] tracking-[-0.18px] leading-[25.2px] w-full">
+          <p class="whitespace-nowrap">+55 (48) 3205-3801</p><p class="whitespace-nowrap">contato@franq.com.br</p><p>Endereço</p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-[12px] items-start">
+        <p class="font-bold fvs text-[24px] text-white tracking-[-0.24px] leading-[33.6px] whitespace-nowrap">Conteúdos</p>
+        <div class="flex flex-col h-[74px] items-start justify-between w-full">
+          <p class="font-normal fvs text-[18px] text-white tracking-[-0.18px] leading-[25.2px] whitespace-nowrap">Blog</p>
+          <div class="flex items-center justify-between w-[166px]">
+            <span class="relative size-[24px] overflow-clip"><img class="absolute inset-[3.07%_6.62%_3.12%_6.64%] block max-w-none size-full" src="assets/linkedin.svg" alt="" /></span>
+            <span class="relative size-[24px] overflow-clip"><img class="absolute inset-[14.29%_3.57%] block max-w-none size-full" src="assets/youtube.svg" alt="" /></span>
+            <span class="relative size-[24px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/instagram.svg" alt="" /></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col gap-[40px] items-center justify-center pt-[40px] px-[120px] w-full">
+    <p class="font-normal fvs text-[16px] text-[#999] text-center tracking-[-0.16px] leading-[22.4px] w-full">A Franq Tecnologia S.A. (CNPJ 32.709.829/0001-54) é uma plataforma de tecnologia que integra instituições financeiras a bancários autônomos, e realiza a divulgação de produtos por meio de seus correspondentes bancários WIN Correspondente Bancário LTDA (CNPJ 40.673.528/0001-46) e K.ZA Correspondente Bancário LTDA (CNPJ 42.637.945/0001-69), nos termos da Resolução CMN nº 4.935/21, operando com indicação de clientes e apoio administrativo para instituições financeiras parceiras. As informações contidas nesta página foram redigidas pelo nosso time de curadoria a partir de dados públicos do parceiro. A Franq não se responsabiliza por eventuais alterações nas características ou features dos produtos, assim como taxas, critérios de renda ou processos de contratação. A Franq não é uma instituição bancária ou agente de distribuição de qualquer tipo de produto financeiro ou securitário, valor mobiliário ou semelhantes. A Franq é uma plataforma que fornece aos nossos parceiros e agentes autônomos de investimentos, as ferramentas para a divulgação desses produtos e serviços. O trabalho da Franq e dos Personal Bankers não deve ser interpretado como consultoria financeira. Tanto a Franq como seus parceiros não cobram nenhum valor adiantado pela prestação de serviços ou concessão de crédito. Sempre desconfie de atividades fraudulentas.</p>
+    <div class="h-px w-full bg-white/10"></div>
+  </div>
+  <div class="bg-[#131c25] flex flex-col items-center justify-center px-[120px] py-[40px] w-full">
+    <p class="font-normal fvs text-[16px] text-[#999] text-center tracking-[-0.16px] leading-[22.4px] w-full">Copyright © 2026. Franq CNPJ 32.709.829/0001-54 – "Franq" e a marca Franq são trademarks da empresa. Todos os direitos reservados. Av. Madre Benvenuta, 1313, Sta. Mônica – Florianópolis, Santa Catarina – Brasil</p>
+  </div>
+</div>`;
+
+document.querySelectorAll('[data-part="header"]').forEach(el => el.outerHTML = HEADER);
+document.querySelectorAll('[data-part="banner"]').forEach(el => el.outerHTML = BANNER);
+document.querySelectorAll('[data-part="footer"]').forEach(el => el.outerHTML = FOOTER);
+
+/* ---------- Navegação (interações do protótipo) ---------- */
+function goTo(step) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + step).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/* ---------- Slider de prazo (Step 5) ---------- */
+(function () {
+  const area = document.getElementById('sliderArea');
+  const handle = document.getElementById('sliderHandle');
+  const fill = document.getElementById('sliderFill');
+  const monthsEl = document.getElementById('sliderMonths');
+  const parcelaEl = document.getElementById('parcelaValor');
+  if (!area || !handle) return;
+
+  const TRACK_START = 20;      // início da barra preenchida
+  const MIN_CENTER = 25;       // centro do handle sobre a caixa "12"
+  const MAX_CENTER = 436;      // centro do handle sobre a caixa "72"
+  const MIN_M = 12, MAX_M = 72;
+  const BASE = 832.83 * 36;    // mantém R$ 832,83 em 36 meses
+
+  let dragging = false;
+  let touched = false;         // antes do primeiro arraste mantém o visual do Figma (36)
+
+  function fmt(v) {
+    return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function setCenter(center) {
+    center = Math.max(MIN_CENTER, Math.min(MAX_CENTER, center));
+    handle.style.left = center + 'px';
+    fill.style.width = Math.max(0, center - TRACK_START) + 'px';
+    const frac = (center - MIN_CENTER) / (MAX_CENTER - MIN_CENTER);
+    const months = Math.round(MIN_M + frac * (MAX_M - MIN_M));
+    monthsEl.textContent = months;
+    parcelaEl.textContent = fmt(BASE / months);
+  }
+  function moveFromEvent(e) {
+    const rect = area.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    setCenter(x);
+  }
+  function start(e) { dragging = true; if (!touched) { touched = true; } moveFromEvent(e); e.preventDefault(); }
+  function move(e) { if (dragging) moveFromEvent(e); }
+  function end() { dragging = false; }
+
+  handle.addEventListener('mousedown', start);
+  area.addEventListener('mousedown', start);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  handle.addEventListener('touchstart', start, { passive: false });
+  area.addEventListener('touchstart', start, { passive: false });
+  window.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('touchend', end);
+})();
+
+/* ---------- Máscaras dos inputs (por função do campo) ---------- */
+(function () {
+  const onlyDigits = s => (s || '').replace(/\D/g, '');
+
+  const masks = {
+    // Placa Mercosul/antiga: 3 letras + 4 alfanuméricos, sem separador (ex.: FAE6166)
+    placa(v) { return (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7); },
+
+    // Nome: apenas letras (com acentos) e espaços
+    nome(v) { return (v || '').replace(/[^A-Za-zÀ-ÿÀ-ſ\s']/g, ''); },
+
+    // E-mail: sem espaços, minúsculo
+    email(v) { return (v || '').replace(/\s/g, '').toLowerCase(); },
+
+    // Telefone celular: (00) 00000-0000
+    phone(v) {
+      const d = onlyDigits(v).slice(0, 11);
+      if (d.length <= 2) return d.replace(/(\d{1,2})/, '($1');
+      if (d.length <= 6) return d.replace(/(\d{2})(\d{1,4})/, '($1) $2');
+      if (d.length <= 10) return d.replace(/(\d{2})(\d{4})(\d{1,4})/, '($1) $2-$3');
+      return d.replace(/(\d{2})(\d{5})(\d{1,4})/, '($1) $2-$3');
+    },
+
+    // CPF: 000.000.000-00
+    cpf(v) {
+      const d = onlyDigits(v).slice(0, 11);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return d.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+      if (d.length <= 9) return d.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    },
+
+    // Data: dd/mm/aaaa
+    date(v) {
+      const d = onlyDigits(v).slice(0, 8);
+      if (d.length <= 2) return d;
+      if (d.length <= 4) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+      return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+    },
+
+    // Moeda BRL: R$ 0,00 (a partir dos dígitos, em centavos)
+    currency(v) {
+      const d = onlyDigits(v);
+      if (!d) return '';
+      const n = parseInt(d, 10) / 100;
+      return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  };
+
+  document.querySelectorAll('[data-mask]').forEach(inp => {
+    const fn = masks[inp.dataset.mask];
+    if (!fn) return;
+    // aplica também ao valor inicial (ex.: placa, renda já preenchida)
+    if (inp.value) inp.value = fn(inp.value);
+    inp.addEventListener('input', () => {
+      const start = inp.selectionStart;
+      const before = inp.value;
+      inp.value = fn(inp.value);
+      // mantém o cursor no fim quando há reformatação
+      if (start !== null && inp.value.length !== before.length) {
+        try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+      }
+    });
+  });
+})();
+
+/* ---------- Validação dos campos (destaque em vermelho ao sair) ---------- */
+(function () {
+  const digits = s => (s || '').replace(/\D/g, '');
+
+  // Regras espelhadas do site no ar (validação client-side por formato)
+  const validators = {
+    cpf: v => digits(v).length === 11,
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((v || '').trim()),
+    phone: v => digits(v).length === 11,
+    date: v => {
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((v || '').trim());
+      if (!m) return false;
+      const dd = +m[1], mm = +m[2], yy = +m[3];
+      if (mm < 1 || mm > 12 || dd < 1) return false;
+      if (dd > new Date(yy, mm, 0).getDate()) return false;
+      if (yy < 1900) return false;
+      return new Date(yy, mm - 1, dd) <= new Date();
+    },
+    nome: v => (v || '').trim().length >= 2,
+    placa: v => {
+      const p = (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p) || /^[A-Z]{3}\d{4}$/.test(p);
+    },
+    currency: v => { const d = digits(v); return d.length > 0 && parseInt(d, 10) > 0; }
+  };
+
+  const messages = {
+    cpf: 'CPF deve estar no formato 000.000.000-00',
+    email: 'E-mail inválido.',
+    phone: 'Celular deve estar no formato (00) 00000-0000',
+    date: 'Data deve estar no formato DD/MM/AAAA',
+    nome: 'Nome deve ter pelo menos 2 caracteres',
+    placa: 'Placa inválida.',
+    currency: 'Informe um valor válido.'
+  };
+
+  const fieldOf = inp => inp.closest('.flex.flex-col') || inp.parentElement.parentElement;
+
+  function setError(inp, msg) {
+    const wrap = inp.parentElement;
+    wrap.style.borderColor = msg ? '#e02424' : '';
+    const field = fieldOf(inp);
+    let err = field.querySelector('.field-error');
+    if (msg) {
+      if (!err) {
+        err = document.createElement('p');
+        err.className = 'field-error font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]';
+        field.appendChild(err);
+      }
+      err.textContent = msg;
+    } else if (err) {
+      err.remove();
+    }
+  }
+
+  function validate(inp, requireValue) {
+    const fn = validators[inp.dataset.mask];
+    if (!fn) return true;
+    const val = inp.value.trim();
+    if (!val) { setError(inp, requireValue ? 'Campo obrigatório.' : ''); return !requireValue; }
+    const ok = fn(val);
+    setError(inp, ok ? '' : messages[inp.dataset.mask]);
+    return ok;
+  }
+
+  // Validação em tempo real (onChange) + ao sair do campo — igual ao site no ar
+  document.querySelectorAll('#screen6 [data-mask]').forEach(inp => {
+    inp.addEventListener('input', () => validate(inp, false));
+    inp.addEventListener('blur', () => validate(inp, false));
+  });
+
+  // "Criar cadastro": valida tudo; se ok, mostra o estado "Verificando..." (como no fluxo real)
+  const submit = [...document.querySelectorAll('#screen6 button')].find(b => /Criar cadastro/.test(b.textContent));
+  if (submit) {
+    const label = submit.querySelector('span') || submit;
+    submit.addEventListener('click', () => {
+      const inps = [...document.querySelectorAll('#screen6 [data-mask]')];
+      let firstBad = null;
+      inps.forEach(inp => { if (!validate(inp, true) && !firstBad) firstBad = inp; });
+      if (firstBad) { firstBad.focus(); return; }
+      const original = label.textContent;
+      label.textContent = 'Verificando...';
+      submit.disabled = true;
+      submit.style.opacity = '0.7';
+      setTimeout(() => {
+        label.textContent = original;
+        submit.disabled = false;
+        submit.style.opacity = '';
+      }, 1400);
+    });
+  }
+
+  // Botões sociais: feedback de carregamento ao clicar (o OAuth real depende do back-end)
+  ['Google', 'Facebook'].forEach(provider => {
+    const btn = [...document.querySelectorAll('#screen6 button')].find(b => new RegExp('Continuar com o ' + provider).test(b.textContent));
+    if (!btn) return;
+    const span = [...btn.querySelectorAll('span')].pop();
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const original = span.textContent;
+      span.textContent = 'Conectando...';
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      setTimeout(() => { span.textContent = original; btn.disabled = false; btn.style.opacity = ''; }, 1400);
+    });
+  });
+})();
+
+/* ---------- Consulta da placa: preenche os dados do veículo (Step 4) ---------- */
+(function () {
+  // Base de exemplo (consulta real de placa exige API externa). Só FAE6166 é reconhecida.
+  const VEICULOS = {
+    'FAE6166': {
+      marca: 'FORD',
+      modelo: 'ECOSPORT XLT FREESTYLE 1.6 FLEX 8V 5P',
+      ano: '2012 Alcool / Gasolina',
+      fipe: 'R$ 41.385,00'
+    }
+  };
+  const PLACEHOLDER = 'Esse campo será preenchido automaticamente.';
+  const placa = document.getElementById('ae-placa');
+  const box = document.getElementById('ae-placa-box');
+  const erro = document.getElementById('ae-placa-erro');
+  const marca = document.getElementById('ae-marca');
+  const modelo = document.getElementById('ae-modelo');
+  const ano = document.getElementById('ae-ano');
+  const fipe = document.getElementById('ae-fipe');
+  if (!placa) return;
+
+  function reset() {
+    marca.textContent = PLACEHOLDER;
+    modelo.textContent = PLACEHOLDER;
+    ano.textContent = PLACEHOLDER;
+    fipe.textContent = 'R$ 0,00';
+  }
+
+  window.buscarPlaca = function () {
+    const val = (placa.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const v = VEICULOS[val];
+    if (!v) {
+      erro.style.display = 'block';
+      box.style.borderColor = '#e02424';
+      reset();
+      return;
+    }
+    erro.style.display = 'none';
+    box.style.borderColor = '';
+    marca.textContent = modelo.textContent = ano.textContent = fipe.textContent = 'Buscando...';
+    setTimeout(() => {
+      marca.textContent = v.marca;
+      modelo.textContent = v.modelo;
+      ano.textContent = v.ano;
+      fipe.textContent = v.fipe;
+    }, 700);
+  };
+
+  // Enter no campo também busca; digitar limpa o erro
+  placa.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.buscarPlaca(); } });
+  placa.addEventListener('input', () => { erro.style.display = 'none'; box.style.borderColor = ''; });
+})();
+</script>
+</body>
+</html>
