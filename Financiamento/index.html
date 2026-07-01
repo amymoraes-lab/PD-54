@@ -74,15 +74,17 @@
     .w-\[461px\]     { transform: scale(0.60); transform-origin: left top; }  /* slider (Auto Equity) */
     .hide-sm         { display: none !important; }
 
-    /* "Continuar com a proposta" fixo no rodapé, na tela de simulação (após simular) */
-    #screen2 #s2-continuar {
+    /* barra fixa no rodapé (tela de simulação): texto + "Continuar com a proposta" */
+    #screen2 #s2-cta {
+      display: flex; flex-direction: column; gap: 8px;
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
       background: #ffffff; padding: 12px 16px;
       box-shadow: 0 -4px 16px rgba(0,0,0,0.10);
-      justify-content: center;
     }
+    #screen2 #s2-cta-text { font-size: 12px; font-weight: 300; line-height: 16px; margin: 0; }
+    #screen2 #s2-continuar { width: 100%; justify-content: center; }
     #screen2 #s2-continuar > span { width: 100%; justify-content: center; }
-    #screen2 { padding-bottom: 96px; }   /* espaço p/ o conteúdo não ficar atrás do botão fixo */
+    #screen2 { padding-bottom: 148px; }   /* espaço p/ o conteúdo não ficar atrás da barra fixa */
   }
 </style>
 </head>
@@ -433,14 +435,16 @@
         </div>
       </div>
 
-      <p class="font-semibold fvs text-[#374151] text-[18px] leading-[28px] w-full">Para dar continuidade à proposta, precisamos que você crie uma conta. Assim, seu personal banker poderá acompanhar seu processo de forma personalizada e segura.</p>
+      <div id="s2-cta" class="contents">
+        <p id="s2-cta-text" class="font-semibold fvs text-[#374151] text-[18px] leading-[28px] w-full">Para dar continuidade à proposta, precisamos que você crie uma conta. Assim, seu personal banker poderá acompanhar seu processo de forma personalizada e segura.</p>
 
-      <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
-        <button id="s2-continuar" onclick="continuarProposta()" class="flex gap-[24px] items-center justify-end shrink-0">
-          <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
-            <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Continuar com a proposta</span>
-          </span>
-        </button>
+        <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
+          <button id="s2-continuar" onclick="continuarProposta()" class="flex gap-[24px] items-center justify-end shrink-0">
+            <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
+              <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Continuar com a proposta</span>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
