@@ -69,9 +69,20 @@
   @media (max-width: 520px) {
     .bg-\[\#fafaff\] { overflow: hidden !important; }
     .p-\[28px\]      { padding: 16px !important; }
-    .w-\[441\.5px\]  { transform: scale(0.62); transform-origin: left top; }  /* régua de aprovação */
+    /* régua "chance de aprovação": reduz p/ caber e remove o vão vertical reservado pela escala */
+    .w-\[441\.5px\]  { transform: scale(0.66); transform-origin: left top; margin-bottom: -20px; }
     .w-\[461px\]     { transform: scale(0.60); transform-origin: left top; }  /* slider (Auto Equity) */
     .hide-sm         { display: none !important; }
+
+    /* "Continuar com a proposta" fixo no rodapé, na tela de simulação (após simular) */
+    #screen2 #s2-continuar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      background: #ffffff; padding: 12px 16px;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.10);
+      justify-content: center;
+    }
+    #screen2 #s2-continuar > span { width: 100%; justify-content: center; }
+    #screen2 { padding-bottom: 96px; }   /* espaço p/ o conteúdo não ficar atrás do botão fixo */
   }
 </style>
 </head>
@@ -323,6 +334,12 @@
         </div>
       </div>
 
+      <!-- botão: refaz a simulação a partir dos valores atuais do formulário -->
+      <div class="bg-white flex gap-[40px] items-center overflow-clip shrink-0 w-full">
+        <button id="s2-simular" onclick="simularNovamente()" class="border border-[#687bea] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0">
+          <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Simule novamente</span>
+        </button>
+      </div>
     </div>
 
     <!-- right: simulador de financiamento -->
@@ -802,7 +819,10 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
   if (!veiculo) return;
 
   let entradaTocada = false;
+  let lastSource = 'entrada';               // último campo editado (entrada/financiamento)
   let fipeRef = brl(veiculo.value) || 0;   // valor de referência da tabela FIPE
+  let baseTotal = brl(veiculo.value) || 0; // total comprometido (entrada + financiamento);
+                                           // só muda ao simular, não ao digitar o valor do veículo
 
   // Tabela FIPE (simulada): valores-base de referência (ano 2024); depreciação ~7% por ano
   const FIPE = {
@@ -839,20 +859,20 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     return v > 0 && (v > f.max + 0.005 || v < f.min - 0.005);
   }
   // valor é editável; a mensagem fica vermelha quando sai de ±15% da FIPE
-  const continuarBtn = $('s2-continuar');
+  const simularNovamenteBtn = $('s2-simular');
   function mostraFaixaFipe() {
     const fora = fipeRef > 0 && foraDaFaixa();
-    // fora da faixa: bloqueia o avanço (botão esmaecido)
-    if (continuarBtn) { continuarBtn.style.opacity = fora ? '0.5' : ''; continuarBtn.title = fora ? 'Ajuste o valor do veículo para dentro de ±15% da FIPE' : ''; }
+    // fora da faixa: bloqueia APENAS a simulação (botão "Simule novamente" esmaecido)
+    const dimTitle = fora ? 'Ajuste o valor do veículo para dentro de ±15% da FIPE' : '';
+    if (simularNovamenteBtn) { simularNovamenteBtn.style.opacity = fora ? '0.5' : ''; simularNovamenteBtn.title = dimTitle; }
     if (!fipeHint) return;
     if (!fora) { fipeHint.textContent = ''; return; }
     const f = faixaFipe();
     fipeHint.style.color = '#e02424';
     fipeHint.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(f.min) + ' a ' + fmt(f.max) + '.';
   }
-  // só segue para o cadastro se o valor estiver dentro de ±15% da FIPE
+  // avança para o cadastro sempre (sem trava de ±15% — a faixa só bloqueia "Simule novamente")
   window.continuarProposta = function () {
-    if (foraDaFaixa()) { mostraFaixaFipe(); veiculo.focus(); return; }
     goTo('cad');
   };
 
@@ -863,9 +883,11 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     const v = fipeValor(marcaEl.value, modeloEl.value, anoEl.value);
     if (v > 0) {
       fipeRef = v;
+      baseTotal = v;
       veiculo.value = fmt(v);
       entradaTocada = false;
       entrada.value = fmt(v * ENTRADA_MIN);
+      lastSource = 'entrada';
       update('entrada');
       mostraFaixaFipe();
     }
@@ -902,7 +924,7 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
   // entrada + financiamento = valor do veículo. `source` indica qual campo o usuário mexeu,
   // para recalcular o outro sem sobrescrever o que está sendo digitado.
   function update(source) {
-    const vVeiculo = brl(veiculo.value);
+    const vVeiculo = baseTotal;   // base da entrada/financiamento (não o campo do veículo ao vivo)
     let vEntrada, vFin;
 
     if (source === 'fin') {
@@ -940,26 +962,16 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     if (here) here.style.left = Math.max(0, Math.min(x - 30, 360)) + 'px';
   }
 
-  // editar o valor do veículo: mostra "atualizando..." e recalcula em tempo real (com leve atraso)
+  // Sincronia em tempo real: mudar um campo recalcula os demais na hora.
   const loadingEl = $('s2-loading');
   let loadTimer = null;
-  veiculo.addEventListener('input', () => {
-    if (loadingEl) loadingEl.style.display = 'flex';
-    clearTimeout(loadTimer);
-    loadTimer = setTimeout(() => {
-      if (!entradaTocada) {
-        const v = brl(veiculo.value);
-        entrada.value = v ? fmt(v * ENTRADA_MIN) : '';
-      }
-      update('entrada');
-      mostraFaixaFipe();
-      if (loadingEl) loadingEl.style.display = 'none';
-    }, 900);
-  });
-  // editar a entrada recalcula o financiamento; editar o financiamento recalcula a entrada
-  entrada.addEventListener('input', () => { entradaTocada = true; update('entrada'); });
-  fin.addEventListener('input', () => { entradaTocada = true; update('fin'); });
-  parcelas.addEventListener('change', () => update('entrada'));
+  // Editar o valor do veículo NÃO simula automaticamente — apenas atualiza o aviso de
+  // faixa (±15% da FIPE). O recálculo a partir do valor ocorre ao clicar em "Simule novamente".
+  veiculo.addEventListener('input', mostraFaixaFipe);
+  // entrada ↔ financiamento (mudar um recalcula o outro); nº de meses recalcula a parcela
+  entrada.addEventListener('input', () => { entradaTocada = true; lastSource = 'entrada'; update('entrada'); });
+  fin.addEventListener('input', () => { entradaTocada = true; lastSource = 'fin'; update('fin'); });
+  parcelas.addEventListener('change', () => update(lastSource));
 
   // leva os valores informados na Step 01 para o simulador
   window.simular = function () {
@@ -975,9 +987,28 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       entradaTocada = false;
       entrada.value = fmt(fipeRef * ENTRADA_MIN);
     }
+    baseTotal = brl(veiculo.value);          // compromete o total ao entrar no simulador
     update('entrada');
     mostraFaixaFipe();
     goTo(2);
+  };
+
+  // "Simule novamente": re-sugere a entrada (20% do valor) e recalcula tudo.
+  // Fora de ±15% da FIPE não é possível simular.
+  window.simularNovamente = function () {
+    if (foraDaFaixa()) { mostraFaixaFipe(); veiculo.focus(); return; }
+    if (loadingEl) loadingEl.style.display = 'flex';
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => {
+      entradaTocada = false;
+      const v = brl(veiculo.value);
+      baseTotal = v;                         // compromete o valor do veículo como total da simulação
+      entrada.value = v ? fmt(v * ENTRADA_MIN) : '';
+      lastSource = 'entrada';
+      update('entrada');
+      mostraFaixaFipe();
+      if (loadingEl) loadingEl.style.display = 'none';
+    }, 700);
   };
 
   update('entrada');   // estado inicial coerente
