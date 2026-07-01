@@ -30,6 +30,49 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loader { width: 34px; height: 34px; border: 3px solid #e2e8f0; border-top-color: #687bea; border-radius: 50%; animation: spin .7s linear infinite; }
   #s2-loading { display: none; }
+
+  /* ===================== RESPONSIVO / MOBILE ===================== */
+  /* O layout de duas colunas (Figma/desktop) empilha em telas menores. */
+  @media (max-width: 1024px) {
+    /* linha principal: formulário + resultado empilhados */
+    .gap-\[100px\] { flex-direction: column !important; gap: 40px !important; }
+    .py-\[64px\]   { padding-top: 32px !important; padding-bottom: 32px !important; }
+
+    /* larguras fixas do Figma → ocupam 100% */
+    .w-\[584px\], .w-\[517px\], .w-\[508px\], .w-\[522px\],
+    .w-\[460px\], .w-\[477px\], .w-\[817px\],
+    .w-\[412px\], .w-\[458px\] { width: 100% !important; max-width: 100% !important; }
+    .h-\[754px\] { height: auto !important; }
+
+    /* banner */
+    .px-\[120px\]  { padding-left: 24px !important; padding-right: 24px !important; }
+    .text-\[50px\] { font-size: 30px !important; line-height: 1.2 !important; }
+
+    /* header */
+    .px-\[49px\] { padding-left: 20px !important; padding-right: 20px !important; }
+    .py-\[31px\] { padding-top: 20px !important; padding-bottom: 20px !important; }
+
+    /* footer: colunas empilhadas */
+    .gap-\[157px\] { flex-direction: column !important; gap: 32px !important; }
+
+    /* cadastro: oculta o banner lateral e usa a largura toda */
+    .h-\[1062px\]      { height: auto !important; }
+    .basis-\[45\.5\%\] { display: none !important; }
+    .px-\[40px\]       { padding: 40px 20px !important; }
+
+    /* painel "resultado" desabilitado: conteúdo absoluto vira fluxo normal */
+    .h-\[451px\]  { height: auto !important; }
+    .top-\[86px\] { position: static !important; transform: none !important; margin: 24px 0 !important; padding: 0 16px !important; }
+  }
+
+  /* Celular: réguas/sliders com coordenadas fixas em px são reduzidos p/ caber. */
+  @media (max-width: 520px) {
+    .bg-\[\#fafaff\] { overflow: hidden !important; }
+    .p-\[28px\]      { padding: 16px !important; }
+    .w-\[441\.5px\]  { transform: scale(0.62); transform-origin: left top; }  /* régua de aprovação */
+    .w-\[461px\]     { transform: scale(0.60); transform-origin: left top; }  /* slider (Auto Equity) */
+    .hide-sm         { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -509,7 +552,7 @@ const HEADER = `
 <div class="bg-[#131c25] flex items-center justify-between overflow-clip px-[49px] py-[31px] shrink-0 w-full">
   <div class="h-[30px] relative shrink-0 w-[136.476px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/logo.svg" alt="FRANQ" /></div>
   <div class="flex gap-[28px] items-center shrink-0">
-    <div class="relative flex items-center gap-[12px]">
+    <div class="relative flex items-center gap-[12px] hide-sm">
       <div class="relative size-[38px]"><img class="absolute inset-0 block max-w-none size-full" src="assets/ellipse1965.png" alt="" /><img class="absolute left-[11px] top-[16px] size-[22px]" src="assets/group1000003590.svg" alt="" /></div>
       <div class="h-[14px] w-[82px] relative"><img class="absolute inset-0 block max-w-none size-full" src="assets/lojadafran.svg" alt="Loja da Fran" /></div>
       <img class="h-[5px] w-[11px]" src="assets/arrowsmall.svg" alt="" />
