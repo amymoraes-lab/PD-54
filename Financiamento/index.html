@@ -31,6 +31,25 @@
   .loader { width: 34px; height: 34px; border: 3px solid #e2e8f0; border-top-color: #687bea; border-radius: 50%; animation: spin .7s linear infinite; }
   #s2-loading { display: none; }
 
+  /* Régua de chance de aprovação — versão mobile (fluida, nítida, acessível) */
+  #s2-regua-mobile { display: none; position: relative; width: 100%; }
+  #s2-regua-mobile .s2rm-top { position: relative; height: 34px; }
+  #s2-regua-mobile .s2rm-here {
+    position: absolute; top: 0; transform: translateX(-50%);
+    font-size: 12px; font-weight: 600; color: #0d062d; white-space: nowrap; transition: left .15s ease;
+  }
+  #s2-regua-mobile .s2rm-arrow {
+    position: absolute; top: 19px; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-top: 8px solid #0d062d; transition: left .15s ease;
+  }
+  #s2-regua-mobile .s2rm-track { display: flex; height: 12px; width: 100%; border-radius: 999px; overflow: hidden; }
+  #s2-regua-mobile .s2rm-track > span { display: block; height: 100%; }
+  #s2-regua-mobile .s2rm-labels { position: relative; margin-top: 6px; height: 15px; }
+  #s2-regua-mobile .s2rm-labels > span { position: absolute; transform: translateX(-50%); font-size: 11px; line-height: 15px; color: #8c8c8c; white-space: nowrap; }
+  #s2-regua-mobile .s2rm-labels > span:first-child { left: 0; transform: none; }
+  #s2-regua-mobile .s2rm-labels > span:last-child { transform: translateX(-100%); }
+
   /* ===================== RESPONSIVO / MOBILE ===================== */
   /* O layout de duas colunas (Figma/desktop) empilha em telas menores. */
   @media (max-width: 1024px) {
@@ -69,10 +88,10 @@
   @media (max-width: 520px) {
     .bg-\[\#fafaff\] { overflow: hidden !important; }
     .p-\[28px\]      { padding: 16px !important; }
-    /* régua "chance de aprovação": reduz p/ caber e remove o vão vertical reservado pela escala */
-    .w-\[441\.5px\]  { transform: scale(0.66); transform-origin: left top; margin-bottom: -20px; }
-    .w-\[461px\]     { transform: scale(0.60); transform-origin: left top; }  /* slider (Auto Equity) */
-    .hide-sm         { display: none !important; }
+    /* régua "chance de aprovação": troca a versão do Figma (px) pela fluida acessível */
+    #s2-regua-desktop { display: none !important; }
+    #s2-regua-mobile  { display: block !important; }
+    .hide-sm          { display: none !important; }
 
     /* barra fixa no rodapé (tela de simulação): texto + "Continuar com a proposta" */
     #screen2 #s2-cta {
@@ -417,8 +436,8 @@
             <p class="fvs text-[16px] text-[#314158] leading-[24px]">Chance de aprovação </p>
             <p id="s2-chance-status" class="fvs font-semibold text-[14px] text-[#33c759] leading-[20px]">Alta</p>
           </div>
-          <!-- régua de calor -->
-          <div class="relative w-[441.5px] h-[62px]">
+          <!-- régua de calor (desktop) -->
+          <div id="s2-regua-desktop" class="relative w-[441.5px] h-[62px]">
             <div class="absolute left-0 top-[27px] h-[16px] w-[84.2px] bg-[#e53d3d] rounded-l-[8px]"></div>
             <div class="absolute left-[84.2px] top-[27px] h-[16px] w-[42.1px] bg-[#e8ba26]"></div>
             <div class="absolute left-[126.3px] top-[27px] h-[16px] w-[84.2px] bg-[#f29426]"></div>
@@ -431,6 +450,27 @@
             <p class="absolute left-[200.5px] top-[49px] text-[10px] text-[#8c8c8c]">50%</p>
             <p class="absolute left-[413.5px] top-[49px] text-[10px] text-[#8c8c8c]">100%</p>
           </div>
+          <!-- régua de calor (mobile): fluida e acessível -->
+          <div id="s2-regua-mobile" class="w-full" role="img" aria-label="Régua de chance de aprovação">
+            <div class="s2rm-top">
+              <span id="s2m-here" class="s2rm-here">Você está aqui!</span>
+              <span id="s2m-arrow" class="s2rm-arrow" aria-hidden="true"></span>
+            </div>
+            <div class="s2rm-track" aria-hidden="true">
+              <span style="width:20%;background:#e53d3d"></span>
+              <span style="width:10%;background:#e8ba26"></span>
+              <span style="width:20%;background:#f29426"></span>
+              <span style="width:50%;background:#33c759"></span>
+            </div>
+            <div class="s2rm-labels" aria-hidden="true">
+              <span style="left:0">0%</span>
+              <span style="left:20%">20%</span>
+              <span style="left:30%">30%</span>
+              <span style="left:50%">50%</span>
+              <span style="left:100%">100%</span>
+            </div>
+          </div>
+
           <p class="fvs text-[12px] text-[#6a7282] leading-[16px] w-full">* A régua indica a probabilidade de aprovação baseada no valor de entrada informado.</p>
         </div>
       </div>
@@ -819,6 +859,7 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
   const status = $('s2-chance-status');
   const arrow = $('s2-arrow');
   const here = $('s2-here');
+  const mArrow = $('s2m-arrow'), mHere = $('s2m-here'), mRegua = $('s2-regua-mobile');  // régua mobile
   const fipeHint = $('s2-fipe-hint');
   if (!veiculo) return;
 
@@ -964,6 +1005,12 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     const x = Math.max(0, Math.min(100, perc)) / 100 * 413.5;
     arrow.style.left = x + 'px';
     if (here) here.style.left = Math.max(0, Math.min(x - 30, 360)) + 'px';
+
+    // régua mobile (fluida): marcador em % + descrição acessível
+    const p = Math.max(0, Math.min(100, perc));
+    if (mArrow) mArrow.style.left = p + '%';
+    if (mHere) mHere.style.left = Math.max(12, Math.min(88, p)) + '%';
+    if (mRegua) mRegua.setAttribute('aria-label', 'Chance de aprovação: ' + label + '. Entrada de ' + Math.round(perc) + '% do valor do veículo.');
   }
 
   // Sincronia em tempo real: mudar um campo recalcula os demais na hora.
