@@ -26,6 +26,33 @@
   #screen6 button:active:not([disabled]) { filter: brightness(0.92); }
   #screen6 button[disabled] { cursor: progress; }
 
+  /* Slider de prazo acessível (mobile) — <input type=range> nativo (teclado + leitor de tela) */
+  #ae-prazo-mobile { display: none; }
+  #ae-prazo-range {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 44px; margin: 0; padding: 0;
+    background: transparent; cursor: pointer; --pct: 40%;
+  }
+  #ae-prazo-range::-webkit-slider-runnable-track {
+    height: 8px; border-radius: 999px;
+    background: linear-gradient(to right, #687bea 0 var(--pct), #ececec var(--pct) 100%);
+  }
+  #ae-prazo-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 28px; height: 28px; margin-top: -10px;
+    border-radius: 50%; background: #687bea; border: 3px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  }
+  #ae-prazo-range::-moz-range-track { height: 8px; border-radius: 999px; background: #ececec; }
+  #ae-prazo-range::-moz-range-progress { height: 8px; border-radius: 999px; background: #687bea; }
+  #ae-prazo-range::-moz-range-thumb {
+    width: 28px; height: 28px; border: 3px solid #ffffff; border-radius: 50%;
+    background: #687bea; box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  }
+  #ae-prazo-range:focus { outline: none; }
+  #ae-prazo-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(104,123,234,0.4); }
+  #ae-prazo-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px rgba(104,123,234,0.4); }
+
   /* ===================== RESPONSIVO / MOBILE ===================== */
   /* O layout de duas colunas (Figma/desktop) empilha em telas menores. */
   @media (max-width: 1024px) {
@@ -65,8 +92,11 @@
     .bg-\[\#fafaff\] { overflow: hidden !important; }
     .p-\[28px\]      { padding: 16px !important; }
     .w-\[441\.5px\]  { transform: scale(0.62); transform-origin: left top; }  /* régua (Financiamento) */
-    .w-\[461px\]     { transform: scale(0.66); transform-origin: left top; margin-bottom: -30px; }  /* slider de prazo: aumenta e remove o vão reservado pela escala */
     .hide-sm         { display: none !important; }
+
+    /* prazo: troca o slider custom (px/arraste) pelo range nativo acessível */
+    #screen5 #sliderArea    { display: none !important; }
+    #screen5 #ae-prazo-mobile { display: flex !important; }
 
     /* barra fixa no rodapé (tela de simulação): texto + botão "Cadastre-se" */
     #screen5 #ae-cta {
@@ -303,6 +333,20 @@
               <span class="flex h-[10px] items-center justify-center w-[5px]"><span class="rotate-90"><img class="w-[10px] h-[5px] block" src="assets/chev_l.svg" alt="" /></span></span>
               <span id="sliderMonths" class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">36</span>
               <span class="flex h-[10px] items-center justify-center w-[5px]"><span class="-rotate-90"><img class="w-[10px] h-[5px] block" src="assets/chev_r.svg" alt="" /></span></span>
+            </div>
+          </div>
+
+          <!-- slider de prazo acessível (mobile): usa <input type="range"> nativo -->
+          <div id="ae-prazo-mobile" class="w-full flex flex-col gap-[12px]">
+            <div class="flex items-center justify-between gap-[8px] w-full">
+              <label for="ae-prazo-range" class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Prazo de pagamento em meses</label>
+              <span class="font-semibold fvs text-[16px] text-[#687bea] whitespace-nowrap"><span id="ae-prazo-valor">36</span> meses</span>
+            </div>
+            <input id="ae-prazo-range" type="range" min="12" max="72" step="1" value="36"
+                   aria-label="Prazo de pagamento em meses" aria-valuetext="36 meses" />
+            <div class="flex items-center justify-between w-full font-normal fvs text-[12px] text-[#808080]">
+              <span>12 meses</span>
+              <span>72 meses</span>
             </div>
           </div>
 
@@ -595,6 +639,23 @@ function goTo(step) {
   area.addEventListener('touchstart', start, { passive: false });
   window.addEventListener('touchmove', move, { passive: false });
   window.addEventListener('touchend', end);
+
+  // Slider nativo (mobile): acessível (teclado, leitor de tela, foco visível).
+  // Atualiza meses e parcela usando a mesma fórmula do slider custom.
+  const range = document.getElementById('ae-prazo-range');
+  const rangeVal = document.getElementById('ae-prazo-valor');
+  if (range) {
+    const applyRange = () => {
+      const m = parseInt(range.value, 10);
+      monthsEl.textContent = m;
+      if (rangeVal) rangeVal.textContent = m;
+      parcelaEl.textContent = fmt(BASE / m);
+      range.style.setProperty('--pct', ((m - MIN_M) / (MAX_M - MIN_M) * 100) + '%');
+      range.setAttribute('aria-valuetext', m + (m === 1 ? ' mês' : ' meses'));
+    };
+    range.addEventListener('input', applyRange);
+    applyRange();
+  }
 })();
 
 /* ---------- Máscaras dos inputs (por função do campo) ---------- */
