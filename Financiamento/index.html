@@ -130,7 +130,7 @@
         <div class="flex flex-col gap-[6px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Qual o tipo de veículo?</p>
           <div class="flex gap-[16px] items-center w-full" data-toggle-group>
-            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+            <button class="tipo-btn selected border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
               <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Seminovo</span>
             </button>
             <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
@@ -213,7 +213,7 @@
             <div class="border border-[#e2e8f0] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
               <input id="s1-veiculo" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#364153] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
             </div>
-            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗</p>
+            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗: <span id="s1-fipe-valor">R$ 0,00</span></p>
             <p id="s1-fipe-hint" class="text-[12px] text-[#6a7282] leading-[16px]"></p>
           </div>
         </div>
@@ -273,7 +273,7 @@
         <div class="flex flex-col gap-[6px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px]">Qual o tipo de veículo?</p>
           <div class="flex gap-[16px] items-center w-full" data-toggle-group>
-            <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
+            <button class="tipo-btn selected border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
               <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Seminovo</span>
             </button>
             <button class="tipo-btn border border-[#687bea] flex-1 flex gap-[8px] items-center justify-center p-[16px] rounded-[12px]">
@@ -291,7 +291,7 @@
             </button>
           </div>
           <p id="s2-placa-erro" class="font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]" style="display:none">Placa não encontrada. Preencha os dados manualmente.</p>
-          <p class="text-[12px] text-[#6a7282] leading-[16px]">Informe a placa para preencher os dados automaticamente</p>
+          <p id="s2-placa-req-erro" class="font-normal fvs text-[12px] text-[#e02424] tracking-[-0.12px]" style="display:none">Informe a placa do veículo para seguir com a proposta.</p>
         </div>
 
         <div class="flex flex-col gap-[16px] items-start shrink-0 w-full">
@@ -349,7 +349,7 @@
             <div class="border border-[#e2e8f0] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
               <input id="s2-veiculo" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#364153] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" value="R$ 32.000,00" />
             </div>
-            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗</p>
+            <p class="text-[12px] text-[#6a7282] leading-[16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline text-[#6a7282]">tabela FIPE</a> ↗: <span id="s2-fipe-valor">R$ 32.000,00</span></p>
             <p id="s2-fipe-hint" class="text-[12px] text-[#6a7282] leading-[16px]"></p>
           </div>
         </div>
@@ -382,7 +382,7 @@
             <p class="fvs text-[16px] text-[#1e2939] leading-[24px]">Valor de entrada do financiamento:</p>
             <div class="border border-[#e2e8f0] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
               <input id="s2-entrada" data-mask="currency" inputmode="numeric" class="fvs text-[16px] text-[#364153] leading-[24px] bg-transparent outline-none flex-1 min-w-0" value="R$ 6.400,00" />
-              <span id="s2-entrada-pct" class="bg-[#f0fdf4] text-[#15803d] text-[12px] font-semibold leading-[16px] px-[16px] py-[4px] rounded-[4px] shrink-0">20%</span>
+              <span id="s2-entrada-pct" class="bg-[#f1f5f9] text-[#45556c] text-[12px] font-semibold leading-[16px] px-[16px] py-[4px] rounded-[4px] shrink-0">20%</span>
             </div>
             <p id="s2-entrada-hint" class="text-[12px] text-[#6a7282] leading-[16px]">Entrada sugerida: 20% do valor do veículo (R$ 6.400,00).</p>
           </div>
@@ -434,14 +434,10 @@
         <div class="bg-[#fafaff] border border-[#e5e7eb] flex flex-col gap-[24px] items-start pt-[12px] pb-[24px] px-[24px] w-full">
           <div class="flex items-center justify-between w-full">
             <p class="fvs text-[16px] text-[#314158] leading-[24px]">Chance de aprovação </p>
-            <p id="s2-chance-status" class="fvs font-semibold text-[14px] text-[#33c759] leading-[20px]">Alta</p>
           </div>
           <!-- régua de calor (desktop) -->
           <div id="s2-regua-desktop" class="relative w-[441.5px] h-[62px]">
-            <div class="absolute left-0 top-[27px] h-[16px] w-[84.2px] bg-[#e53d3d] rounded-l-[8px]"></div>
-            <div class="absolute left-[84.2px] top-[27px] h-[16px] w-[42.1px] bg-[#e8ba26]"></div>
-            <div class="absolute left-[126.3px] top-[27px] h-[16px] w-[84.2px] bg-[#f29426]"></div>
-            <div class="absolute left-[210.5px] top-[27px] h-[16px] w-[231px] bg-[#33c759] rounded-r-[8px]"></div>
+            <div class="absolute left-0 top-[27px] h-[16px] w-[441.5px] rounded-[8px]" style="background:linear-gradient(90deg,#f29426 0%,#e8ba26 35%,#a3c644 65%,#33c759 100%)"></div>
             <img id="s2-arrow" class="absolute left-[265.5px] top-[22px] w-[14px] h-[5px]" src="assets/indicator.svg" alt="" />
             <p id="s2-here" class="absolute left-[228px] top-0 fvs font-semibold text-[12px] text-black leading-[16px] whitespace-nowrap">Você está aqui!</p>
             <p class="absolute left-0 top-[49px] text-[10px] text-[#8c8c8c]">0%</p>
@@ -457,10 +453,7 @@
               <span id="s2m-arrow" class="s2rm-arrow" aria-hidden="true"></span>
             </div>
             <div class="s2rm-track" aria-hidden="true">
-              <span style="width:20%;background:#e53d3d"></span>
-              <span style="width:10%;background:#e8ba26"></span>
-              <span style="width:20%;background:#f29426"></span>
-              <span style="width:50%;background:#33c759"></span>
+              <span style="width:100%;background:linear-gradient(90deg,#f29426 0%,#e8ba26 35%,#a3c644 65%,#33c759 100%)"></span>
             </div>
             <div class="s2rm-labels" aria-hidden="true">
               <span style="left:0">0%</span>
@@ -471,7 +464,7 @@
             </div>
           </div>
 
-          <p class="fvs text-[12px] text-[#6a7282] leading-[16px] w-full">* A régua indica a probabilidade de aprovação baseada no valor de entrada informado.</p>
+          <p class="fvs text-[12px] text-[#6a7282] leading-[16px] w-full">*Quanto maior a entrada, maiores as chances de aprovação. O valor de entrada ideal varia conforme o veículo.</p>
         </div>
       </div>
 
@@ -714,6 +707,7 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     const seminovo = sel && /Seminovo/i.test(sel.textContent);
     if (placaField) placaField.style.display = seminovo ? '' : 'none';
   }
+  group._syncPlaca = syncPlaca;   // exposto p/ o simular() re-sincronizar a Step 2
   btns.forEach(btn => btn.addEventListener('click', () => {
     btns.forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
@@ -856,11 +850,11 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
   const parcelas = $('s2-parcelas');
   const parcela = $('s2-parcela');
   const renda = $('s2-renda');
-  const status = $('s2-chance-status');
   const arrow = $('s2-arrow');
   const here = $('s2-here');
   const mArrow = $('s2m-arrow'), mHere = $('s2m-here'), mRegua = $('s2-regua-mobile');  // régua mobile
   const fipeHint = $('s2-fipe-hint');
+  const fipeValorEl = $('s2-fipe-valor');   // valor da FIPE exibido junto ao rótulo
   if (!veiculo) return;
 
   let entradaTocada = false;
@@ -917,7 +911,19 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     fipeHint.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(f.min) + ' a ' + fmt(f.max) + '.';
   }
   // avança para o cadastro sempre (sem trava de ±15% — a faixa só bloqueia "Simule novamente")
+  // A placa é opcional para simular, mas obrigatória para seguir com a proposta.
+  // Aceita o padrão antigo (ABC1234) e o Mercosul (ABC1D23).
+  const PLACA_RX = /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/;
   window.continuarProposta = function () {
+    const v = normalizaPlaca(placaEl2 ? placaEl2.value : '');
+    if (!PLACA_RX.test(v)) {
+      const box = $('s2-placa-box'), reqErro = $('s2-placa-req-erro'), buscaErro = $('s2-placa-erro');
+      if (buscaErro) buscaErro.style.display = 'none';   // some com o erro de busca, se estiver visível
+      if (box) box.style.borderColor = '#e02424';        // destaca o campo em vermelho
+      if (reqErro) reqErro.style.display = 'block';       // mostra o aviso do requisito
+      if (placaEl2) { placaEl2.focus(); placaEl2.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      return;
+    }
     goTo('cad');
   };
 
@@ -962,7 +968,13 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     preencheFipeS2();
   };
   if (placaEl2) {
-    placaEl2.addEventListener('input', () => { placaEl2.value = normalizaPlaca(placaEl2.value); if (placaErro2) placaErro2.style.display = 'none'; });
+    placaEl2.addEventListener('input', () => {
+      placaEl2.value = normalizaPlaca(placaEl2.value);
+      if (placaErro2) placaErro2.style.display = 'none';
+      const reqErro = $('s2-placa-req-erro'), box = $('s2-placa-box');
+      if (reqErro) reqErro.style.display = 'none';   // limpa o aviso do requisito
+      if (box) box.style.borderColor = '';            // volta a borda padrão
+    });
     placaEl2.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.buscarPlacaS2(); } });
   }
 
@@ -984,6 +996,8 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       fin.value = vVeiculo ? fmt(vFin) : '';
     }
 
+    if (fipeValorEl) fipeValorEl.textContent = fmt(fipeRef);
+
     const perc = vVeiculo > 0 ? (vEntrada / vVeiculo) * 100 : 0;
     pct.textContent = Math.round(perc) + '%';
     hint.textContent = 'Entrada sugerida: 20% do valor do veículo (' + fmt(vVeiculo * ENTRADA_MIN) + ').';
@@ -999,8 +1013,6 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     else if (perc < 30) { label = 'Média'; cor = '#e8ba26'; }
     else if (perc < 50) { label = 'Boa'; cor = '#f29426'; }
     else { label = 'Alta'; cor = '#33c759'; }
-    status.textContent = label;
-    status.style.color = cor;
 
     const x = Math.max(0, Math.min(100, perc)) / 100 * 413.5;
     arrow.style.left = x + 'px';
@@ -1030,8 +1042,23 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     if (window.__s1Fora && window.__s1Fora()) { const sv = $('s1-veiculo'); if (sv) sv.focus(); return; }
     const v1 = $('s1-veiculo'), t1 = $('s1-tipo'), a1 = $('s1-ano'), m1 = $('s1-marca'), mo1 = $('s1-modelo');
     if (t1 && t1.value) $('s2-tipo').value = t1.value;
+    // leva a seleção Seminovo / 0 Km para a Step 2 e ajusta a visibilidade da placa
+    const g1 = document.querySelector('#screen1 [data-toggle-group]');
+    const g2 = document.querySelector('#screen2 [data-toggle-group]');
+    if (g2) {
+      const sel1 = g1 && g1.querySelector('.tipo-btn.selected');
+      const btns2 = g2.querySelectorAll('.tipo-btn');
+      btns2.forEach(b => b.classList.remove('selected'));
+      const alvo = sel1 ? Array.from(btns2).find(b => b.textContent.trim() === sel1.textContent.trim()) : btns2[0];
+      if (alvo) alvo.classList.add('selected');
+      if (g2._syncPlaca) g2._syncPlaca();
+    }
     if (m1 && m1.value) { marcaEl.value = m1.value; popularModelos(marcaEl, modeloEl); if (mo1 && mo1.value) modeloEl.value = mo1.value; }
     if (a1 && a1.value) anoEl.value = a1.value;
+    // leva a placa informada na Step 1 para a Step 2 (evita exigir a placa de novo ao continuar).
+    // Sempre sincroniza: se a Step 1 estiver sem placa, limpa a Step 2 (não mantém valor antigo).
+    const p1 = $('s1-placa'), p2 = $('s2-placa');
+    if (p1 && p2) p2.value = normalizaPlaca(p1.value);
     if (v1 && brl(v1.value) > 0) {
       fipeRef = brl(v1.value);               // valor (FIPE) da Step 1 = referência
       veiculo.value = fmt(fipeRef);
@@ -1088,9 +1115,10 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       hint1.style.color = '#e02424';
       hint1.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(min) + ' a ' + fmt(max) + '.';
     }
+    const fipeValor1El = $('s1-fipe-valor');   // valor da FIPE exibido junto ao rótulo
     function calc1() {
       const v = fipeValor(marca.value, modelo.value, ano1.value);
-      if (v > 0) { ref1 = v; valor1.value = fmt(v); mostra1(); }
+      if (v > 0) { ref1 = v; valor1.value = fmt(v); if (fipeValor1El) fipeValor1El.textContent = fmt(v); mostra1(); }
     }
     marca.addEventListener('change', () => { popularModelos(marca, modelo); });
     modelo.addEventListener('change', calc1);
