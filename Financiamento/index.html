@@ -1258,6 +1258,12 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       lastSource = 'entrada';
       update('entrada');
       mostraFaixaFipe();
+    } else if (!(DECLFN['s2'] && DECLFN['s2'].isOn())) {
+      // seleção incompleta (marca/modelo/ano) → zera o valor e o resultado
+      fipeRef = 0; baseTotal = 0; veiculo.value = ''; entradaTocada = false;
+      entrada.value = ''; lastSource = 'entrada';
+      update('entrada');
+      mostraFaixaFipe();
     }
   }
   initVehicleCombos('s2', preencheFipeS2);
@@ -1454,6 +1460,7 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       const v = fipeValor(marca.value, modelo.value, ano1.value);
       if (v > 0) { ref1 = v; valor1.value = fmt(v); if (fipeValor1El) fipeValor1El.textContent = fmt(v); mostra1(); }
       else if (DECLFN['s1'] && DECLFN['s1'].isOn()) { ref1 = 0; mostra1(); }   // declarado: sem faixa FIPE
+      else { ref1 = 0; valor1.value = ''; if (fipeValor1El) fipeValor1El.textContent = 'R$ 0,00'; mostra1(); }   // seleção incompleta → zera o valor
     }
     initVehicleCombos('s1', calc1);
     valor1.addEventListener('input', mostra1);
