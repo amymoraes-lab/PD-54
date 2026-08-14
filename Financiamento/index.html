@@ -364,10 +364,11 @@
       </div>
 
       <!-- botão: refaz a simulação a partir dos valores atuais do formulário -->
-      <div class="bg-white flex gap-[40px] items-center overflow-clip shrink-0 w-full">
+      <div class="bg-white flex gap-[16px] items-center overflow-clip shrink-0 w-full">
         <button id="s2-simular" onclick="simularNovamente()" class="border border-[#687bea] flex gap-[8px] items-center justify-center px-[24px] py-[12px] rounded-[8px] shrink-0">
           <span class="font-medium fvs text-[16px] text-[#687bea] tracking-[-0.16px] leading-[25.6px]">Simule novamente</span>
         </button>
+        <button type="button" id="s2-limpar" onclick="limparCampos()" class="font-medium fvs text-[14px] text-[#687bea] underline underline-offset-2 shrink-0 cursor-pointer bg-transparent">Limpar campos</button>
       </div>
     </div>
 
@@ -1428,6 +1429,19 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       mostraFaixaFipe();
       if (loadingEl) loadingEl.style.display = 'none';
     }, 700);
+  };
+
+  // "Limpar campos": zera marca/modelo/ano/tipo/placa/valor da Step 2 para uma nova simulação
+  window.limparCampos = function () {
+    if (CBX['s2-marca']) CBX['s2-marca'].clear(false);   // cascata: bloqueia modelo/ano, sai do modo declarado e zera o valor/resultado
+    if (CBX['s2-tipo']) CBX['s2-tipo'].clear(true);
+    const parc = $('s2-parcelas'); if (parc) parc.selectedIndex = 0;
+    const pl = $('s2-placa'); if (pl) pl.value = '';
+    const pe = $('s2-placa-erro'); if (pe) pe.style.display = 'none';
+    const pr = $('s2-placa-req-erro'); if (pr) pr.style.display = 'none';
+    const pb = $('s2-placa-box'); if (pb) pb.style.borderColor = '';
+    baseTotal = 0; entradaTocada = false; lastSource = 'entrada';
+    update('entrada');
   };
 
   update('entrada');   // estado inicial coerente
