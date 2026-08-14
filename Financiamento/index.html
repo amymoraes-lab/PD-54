@@ -1230,18 +1230,24 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     fipeHint.textContent = 'Valor permitido (±15% da FIPE): ' + fmt(f.min) + ' a ' + fmt(f.max) + '.';
   }
   // avança para o cadastro sempre (sem trava de ±15% — a faixa só bloqueia "Simule novamente")
-  // A placa é opcional para simular, mas obrigatória para seguir com a proposta.
+  // A placa é obrigatória para seguir com a proposta APENAS quando for Seminovo.
+  // Para 0 Km (que não tem placa) o usuário avança sem placa.
   // Aceita o padrão antigo (ABC1234) e o Mercosul (ABC1D23).
   const PLACA_RX = /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/;
   window.continuarProposta = function () {
-    const v = normalizaPlaca(placaEl2 ? placaEl2.value : '');
-    if (!PLACA_RX.test(v)) {
-      const box = $('s2-placa-box'), reqErro = $('s2-placa-req-erro'), buscaErro = $('s2-placa-erro');
-      if (buscaErro) buscaErro.style.display = 'none';   // some com o erro de busca, se estiver visível
-      if (box) box.style.borderColor = '#e02424';        // destaca o campo em vermelho
-      if (reqErro) reqErro.style.display = 'block';       // mostra o aviso do requisito
-      if (placaEl2) { placaEl2.focus(); placaEl2.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-      return;
+    const g2 = document.querySelector('#screen2 [data-toggle-group]');
+    const selTipo = g2 && g2.querySelector('.tipo-btn.selected');
+    const seminovo = selTipo && /Seminovo/i.test(selTipo.textContent);
+    if (seminovo) {
+      const v = normalizaPlaca(placaEl2 ? placaEl2.value : '');
+      if (!PLACA_RX.test(v)) {
+        const box = $('s2-placa-box'), reqErro = $('s2-placa-req-erro'), buscaErro = $('s2-placa-erro');
+        if (buscaErro) buscaErro.style.display = 'none';   // some com o erro de busca, se estiver visível
+        if (box) box.style.borderColor = '#e02424';        // destaca o campo em vermelho
+        if (reqErro) reqErro.style.display = 'block';       // mostra o aviso do requisito
+        if (placaEl2) { placaEl2.focus(); placaEl2.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        return;
+      }
     }
     goTo('cad');
   };
