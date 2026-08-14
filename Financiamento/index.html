@@ -1039,7 +1039,15 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     function clearError(){ root.classList.remove('is-error'); errmsg.textContent = ''; }
     function showError(msg){ root.classList.add('is-error'); errmsg.textContent = msg; }
 
-    control.addEventListener('mousedown', e => { if (e.target === clearBtn) return; if (blocked) { e.preventDefault(); return; } if (isSelect && open) { e.preventDefault(); closePanel(); return; } if (!open) input.focus(); });
+    control.addEventListener('mousedown', e => {
+      if (e.target === clearBtn) return;                 // o "×" tem tratamento próprio
+      if (blocked) { e.preventDefault(); return; }
+      // clique fora do input (flechinha/lupa) ou modo select: evita o navegador roubar o foco e alterna o painel
+      const toggleZone = (e.target !== input) || isSelect;
+      if (toggleZone) { e.preventDefault(); if (open) { closePanel(); return; } }
+      input.focus();
+      if (!open) openPanel();
+    });
     input.addEventListener('focus', () => { if (!blocked) openPanel(); });
     input.addEventListener('input', () => {
       query = input.value; open = true; root.classList.add('is-open'); clearError();
@@ -1123,7 +1131,6 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
       if (veic) veic.disabled = b;
       if (valorBox) { valorBox.style.opacity = b ? '0.55' : ''; valorBox.style.pointerEvents = b ? 'none' : ''; }
     }
-    function randomValor(){ return Math.round((80000 + Math.random() * 170000) / 100) * 100; }
     function enterDeclared(mv, mo){
       const info = SEM_FIPE[mv][mo];
       decl = { on: true };
@@ -1144,7 +1151,7 @@ document.querySelectorAll('[data-toggle-group]').forEach(group => {
     function onDecl(){
       if (decl.on) {
         if (anodecl.isValid() && comb.isValid()) {
-          if (veic.disabled) { setValorBlocked(false); if (!brl(veic.value)) veic.value = fmt(randomValor()); }
+          if (veic.disabled) setValorBlocked(false);   // desbloqueia; o usuário preenche o valor
         } else setValorBlocked(true);
       }
       if (onResolved) onResolved();
