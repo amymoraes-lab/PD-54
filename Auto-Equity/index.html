@@ -110,6 +110,54 @@
     #screen5 #ae-continuar > span { width: 100%; justify-content: center; }
     #screen5 { padding-bottom: 148px; }   /* espaço p/ o conteúdo não ficar atrás da barra fixa */
   }
+
+  /* ===================== Combobox / select (Ano, Combustível — modelo sem FIPE) ===================== */
+  .cbx { position: relative; width: 100%; }
+  .cbx-control { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 12px; padding: 12px 16px; cursor: text; transition: border-color .12s ease; }
+  .cbx.is-open .cbx-control { border-color: #687bea; }
+  .cbx.is-error .cbx-control { border-color: #e02424; }
+  .cbx.is-blocked .cbx-control { background: #f8fafc; cursor: not-allowed; }
+  .cbx-search { width: 16px; height: 16px; flex: none; color: #6a7282; display: none; }
+  .cbx.is-open .cbx-search { display: block; }
+  .cbx-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    font-size: 16px; line-height: 24px; color: #364153; font-family: inherit; }
+  .cbx-input::placeholder { color: #94a3b8; font-weight: 400; }
+  .cbx.has-value .cbx-input { font-weight: 500; }
+  .cbx.is-blocked .cbx-input { cursor: not-allowed; }
+  .cbx-clear { flex: none; width: 18px; height: 18px; border-radius: 50%; border: none; background: #e2e8f0;
+    color: #475569; font-size: 13px; line-height: 1; display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+  .cbx.has-value .cbx-clear { display: inline-flex; }
+  .cbx-chevron { width: 14px; height: 14px; flex: none; color: #364153; transition: transform .15s ease; }
+  .cbx.is-open .cbx-chevron { transform: rotate(180deg); }
+  .cbx-panel { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 40; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,.12); overflow: hidden; display: none; }
+  .cbx-panel.open-up { top: auto; bottom: calc(100% + 6px); }
+  .cbx.is-open .cbx-panel { display: block; }
+  .cbx-header { padding: 10px 16px; font-size: 12px; color: #6a7282; border-bottom: 1px solid #f1f5f9; }
+  .cbx-list { max-height: 240px; overflow-y: auto; }
+  .cbx-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 40px;
+    padding: 0 16px; font-size: 15px; color: #364153; cursor: pointer; }
+  .cbx-item:hover, .cbx-item.active { background: #f2f4fe; }
+  .cbx-item .cbx-check { width: 16px; height: 16px; color: #687bea; flex: none; opacity: 0; }
+  .cbx-item.selected .cbx-check { opacity: 1; }
+  .cbx-item mark { background: transparent; color: #687bea; font-weight: 700; }
+  .cbx-empty { padding: 16px; display: none; }
+  .cbx.is-empty .cbx-list { display: none; }
+  .cbx.is-empty .cbx-empty { display: block; }
+  .cbx-empty-title { font-size: 14px; font-weight: 600; color: #364153; }
+  .cbx-empty-sub { font-size: 13px; color: #6a7282; margin-top: 4px; line-height: 1.4; }
+  .cbx-empty-clear { font-size: 13px; color: #687bea; text-decoration: underline; background: none;
+    border: none; cursor: pointer; padding: 0; margin-top: 8px; }
+  .cbx-footer { padding: 8px 16px; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+  .cbx-errmsg { display: none; font-size: 12px; color: #e02424; margin-top: 4px; }
+  .cbx.is-error .cbx-errmsg { display: block; }
+  /* Sem legendas (contador/atalhos) */
+  .cbx-header, .cbx-footer { display: none !important; }
+  /* Modo select: mesmo visual do combobox, porém sem busca */
+  .cbx-select .cbx-search { display: none !important; }
+  .cbx-select .cbx-header, .cbx-select .cbx-footer, .cbx-select .cbx-clear { display: none !important; }
+  .cbx-select .cbx-input { cursor: pointer; caret-color: transparent; }
 </style>
 </head>
 <body>
@@ -149,7 +197,7 @@
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Marca do veículo</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
             <p id="ae-marca" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
@@ -158,40 +206,69 @@
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Modelo do veículo</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
             <p id="ae-modelo" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
         <!-- ano (locked) -->
-        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+        <div id="ae-ano-field" class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo e combustível</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
             <p id="ae-ano" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">Esse campo será preenchido automaticamente.</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
+        <!-- Ano + Combustível (modelo sem FIPE): preenchimento manual -->
+        <div id="ae-split" class="w-full" style="display:none">
+          <div class="flex gap-[16px] w-full">
+            <div class="flex flex-col gap-[4px] items-start flex-1 min-w-0">
+              <label class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo</label>
+              <div class="cbx cbx-select" data-cbx data-noun="ano" data-nounpl="anos" data-artigo="um" data-found="encontrado" data-placeholder="Selecione o ano"><input type="hidden" id="ae-anodecl" /></div>
+            </div>
+            <div class="flex flex-col gap-[4px] items-start flex-1 min-w-0">
+              <label class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Combustível</label>
+              <div class="cbx cbx-select" data-cbx data-noun="combustível" data-nounpl="combustíveis" data-artigo="um" data-found="encontrado" data-placeholder="Selecione"><input type="hidden" id="ae-comb" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- aviso: modelo sem valor na FIPE (ex.: BYD) -->
+        <div id="ae-sem-fipe-aviso" class="w-full" style="display:none;border-left:3px solid #687bea;background:#f2f4fe;border-radius:8px;padding:12px 16px;">
+          <p class="fvs text-[14px] font-semibold text-[#1e2939] leading-[20px]">Este modelo ainda não tem valor na tabela FIPE.</p>
+          <p class="fvs text-[13px] text-[#5b6472] leading-[18px]">Informe o valor abaixo para seguir com a simulação.</p>
+        </div>
+
         <!-- fipe (locked) -->
-        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+        <div id="ae-fipe-field" class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline">tabela FIPE</a> ↗</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
             <p id="ae-fipe" class="font-medium fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">R$ 0,00</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
+        </div>
+
+        <!-- valor declarado (modelo sem FIPE) -->
+        <div id="ae-declarado-field" class="flex flex-col gap-[4px] items-start shrink-0 w-full" style="display:none">
+          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor do veículo:</p>
+          <div class="border border-[#e5e7eb] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
+            <input id="ae-valor-declarado" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
+          </div>
+          <p class="text-[12px] text-[#6a7282] leading-[16px]">Use o valor de venda do veículo — nota fiscal ou anúncio.</p>
         </div>
 
         <!-- renda -->
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Renda líquida do cliente:</p>
           <div class="border border-[#e5e7eb] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
-            <input data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
+            <input id="ae-renda" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" placeholder="R$ 0,00" />
           </div>
         </div>
       </div>
 
       <!-- buttons -->
       <div class="bg-white flex gap-[40px] items-center justify-end overflow-clip shrink-0 w-full">
-        <button onclick="goTo(5)" class="flex gap-[24px] items-center justify-end shrink-0">
+        <button onclick="simularEmprestimo()" class="flex gap-[24px] items-center justify-end shrink-0">
           <span class="bg-[#687bea] flex gap-[8px] items-center px-[24px] py-[12px] rounded-[8px]">
             <span class="font-medium fvs text-[16px] text-white tracking-[-0.16px] leading-[25.6px]">Simular empréstimo</span>
           </span>
@@ -243,7 +320,7 @@
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Informe a placa do veículo:</p>
           <div class="border border-[#ccc] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
-            <input data-mask="placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" value="FAE6166" />
+            <input id="ae5-placa" data-mask="placa" maxlength="7" class="font-normal fvs text-[16px] text-black tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full uppercase" value="FAE6166" />
             <img class="size-[14px] shrink-0 object-contain" src="assets/search.svg" alt="" />
           </div>
         </div>
@@ -251,39 +328,59 @@
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Marca do veículo</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
-            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">FORD</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <p id="ae5-marca" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">FORD</p>
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Modelo do veículo</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
-            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">ECOSPORT XLT FREESTYLE 1.6 FLEX 8V 5P</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <p id="ae5-modelo" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">ECOSPORT XLT FREESTYLE 1.6 FLEX 8V 5P</p>
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
-        <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
+        <div id="ae5-ano-field" class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo e combustível</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
-            <p class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">2012 Alcool / Gasolina</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <p id="ae5-ano" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">2012 Alcool / Gasolina</p>
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
+          </div>
+        </div>
+
+        <!-- Ano + Combustível (BYD): mesmos campos do step 1 -->
+        <div id="ae5-split" class="w-full" style="display:none">
+          <div class="flex gap-[16px] w-full">
+            <div class="flex flex-col gap-[4px] items-start flex-1 min-w-0">
+              <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Ano do modelo</p>
+              <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+                <p id="ae5-anodecl" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">—</p>
+                <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
+              </div>
+            </div>
+            <div class="flex flex-col gap-[4px] items-start flex-1 min-w-0">
+              <p class="font-medium fvs text-[16px] text-[#2e3944] tracking-[-0.16px]">Combustível</p>
+              <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
+                <p id="ae5-comb" class="font-normal fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">—</p>
+                <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
-          <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline">tabela FIPE</a> ↗</p>
+          <p id="ae5-valor-label" class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline">tabela FIPE</a> ↗</p>
           <div class="bg-[#e5e5e5] flex items-center justify-between px-[16px] py-[12px] rounded-[12px] w-full">
-            <p class="font-medium fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">R$ 41.385,00</p>
-            <img class="size-[14px] shrink-0 object-contain" src="assets/lock.svg" alt="" />
+            <p id="ae5-valor" class="font-medium fvs text-[16px] text-[#808080] tracking-[-0.16px] leading-[25.6px]">R$ 41.385,00</p>
+            <img class="h-[14px] w-[11px] shrink-0" src="assets/lock.svg" alt="" />
           </div>
         </div>
 
         <div class="flex flex-col gap-[4px] items-start shrink-0 w-full">
           <p class="font-medium fvs text-[16px] text-black tracking-[-0.16px]">Renda líquida do cliente:</p>
           <div class="border border-[#e5e7eb] flex gap-[4px] items-center px-[16px] py-[12px] rounded-[12px] w-full">
-            <input data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" value="R$ 15.000,00" />
+            <input id="ae5-renda" data-mask="currency" inputmode="numeric" class="font-normal fvs text-[16px] text-[#6b7280] tracking-[-0.16px] leading-[25.6px] bg-transparent outline-none w-full" value="R$ 15.000,00" />
           </div>
         </div>
       </div>
@@ -841,8 +938,194 @@ function goTo(step) {
       modelo: 'ECOSPORT XLT FREESTYLE 1.6 FLEX 8V 5P',
       ano: '2012 Alcool / Gasolina',
       fipe: 'R$ 41.385,00'
+    },
+    // BYD sem dados na FIPE: abre Ano + Combustível manuais e valor declarado
+    'BYD2E23': {
+      marca: 'BYD',
+      modelo: 'DOLPHIN EV GS (ELÉTRICO)',
+      combustivel: 'Elétrico',
+      semFipe: true
     }
   };
+
+  // ===== Combobox / select (mesmo do Financiamento) para Ano e Combustível =====
+  const POLICY_YEARS = ['2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'];
+  const COMBUSTIVEIS = ['Elétrico', 'Híbrido', 'Flex', 'Gasolina', 'Diesel', 'Álcool'];
+  function createCombobox(root, onChange) {
+    const hidden  = root.querySelector('input[type=hidden]');
+    const noun    = root.dataset.noun || 'item';
+    const nounPl  = root.dataset.nounpl || (noun + 's');
+    const artigo  = root.dataset.artigo || 'um';
+    const found   = root.dataset.found || 'encontrado';
+    const placeholder = root.dataset.placeholder || ('Digite ou selecione ' + noun);
+    const initialBlocked = root.dataset.blocked || '';
+    const isSelect = root.classList.contains('cbx-select');   // modo select: sem campo de busca
+
+    root.insertAdjacentHTML('beforeend',
+      '<div class="cbx-control">' +
+        '<svg class="cbx-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
+        '<input type="text" class="cbx-input" autocomplete="off" spellcheck="false" />' +
+        '<button type="button" class="cbx-clear" tabindex="-1" aria-label="Limpar seleção">&times;</button>' +
+        '<div class="cbx-spin"></div>' +
+        '<svg class="cbx-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>' +
+      '</div>' +
+      '<div class="cbx-panel" role="listbox">' +
+        '<div class="cbx-header"></div>' +
+        '<div class="cbx-skeleton"><span></span><span></span><span></span></div>' +
+        '<div class="cbx-list"></div>' +
+        '<div class="cbx-empty"><div class="cbx-empty-title"></div><div class="cbx-empty-sub">Revise a escrita ou informe a placa do veículo para preencher automaticamente.</div><button type="button" class="cbx-empty-clear">Limpar busca</button></div>' +
+        '<div class="cbx-footer">↑ ↓ navegar · Enter selecionar · Esc fechar</div>' +
+      '</div>' +
+      '<p class="cbx-errmsg"></p>'
+    );
+
+    const control = root.querySelector('.cbx-control');
+    const input   = root.querySelector('.cbx-input');
+    const clearBtn= root.querySelector('.cbx-clear');
+    const panel   = root.querySelector('.cbx-panel');
+    const header  = root.querySelector('.cbx-header');
+    const list    = root.querySelector('.cbx-list');
+    const emptyTitle = root.querySelector('.cbx-empty-title');
+    const emptyClear = root.querySelector('.cbx-empty-clear');
+    const errmsg  = root.querySelector('.cbx-errmsg');
+
+    let items = [], selected = '', query = '', filtered = [], active = -1, open = false, blocked = !!initialBlocked, debTimer = null;
+
+    input.placeholder = blocked ? initialBlocked : placeholder;
+    input.disabled = blocked;
+    if (isSelect) input.readOnly = true;   // não digita: só abre a lista
+
+    function fold(s){ return (s || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+    function normFull(s){ return fold(s).replace(/-/g, ' ').replace(/\s+/g, ' ').trim(); }
+    function escHtml(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    function rank(){
+      const q = normFull(query);
+      if (!q) { filtered = items.slice(); return; }
+      const terms = q.split(' ').filter(Boolean);
+      const scored = [];
+      items.forEach(it => {
+        const n = normFull(it);
+        if (terms.every(t => n.indexOf(t) !== -1)) scored.push({ it, starts: n.indexOf(terms[0]) === 0 ? 0 : 1 });
+      });
+      scored.sort((a, b) => a.starts - b.starts || a.it.localeCompare(b.it, 'pt'));
+      filtered = scored.map(s => s.it);
+    }
+    function renderLabel(it){
+      const q = normFull(query);
+      if (!q) return escHtml(it);
+      const foldChars = Array.from(it).map(ch => fold(ch));
+      if (foldChars.some(c => c.length !== 1)) return escHtml(it);
+      const foldedStr = foldChars.join('');
+      const bold = new Array(it.length).fill(false);
+      q.split(' ').filter(Boolean).forEach(t => {
+        const idx = foldedStr.indexOf(t);
+        if (idx !== -1) for (let i = idx; i < idx + t.length; i++) bold[i] = true;
+      });
+      let out = '', i = 0;
+      while (i < it.length) {
+        let j = i; const on = bold[i];
+        while (j < it.length && bold[j] === on) j++;
+        const chunk = escHtml(it.slice(i, j));
+        out += on ? '<mark>' + chunk + '</mark>' : chunk;
+        i = j;
+      }
+      return out;
+    }
+    function renderHeader(){
+      const q = query.trim();
+      header.textContent = q
+        ? filtered.length + ' resultado' + (filtered.length === 1 ? '' : 's') + ' para "' + q + '"'
+        : items.length + ' ' + nounPl + ' · digite para filtrar';
+    }
+    function paint(){
+      renderHeader();
+      root.classList.toggle('is-empty', filtered.length === 0);
+      if (filtered.length === 0) {
+        emptyTitle.textContent = 'Nenhum' + (artigo === 'uma' ? 'a' : '') + ' ' + noun + ' ' + found + '.';
+        list.innerHTML = '';
+        return;
+      }
+      list.innerHTML = filtered.map((it, i) =>
+        '<div class="cbx-item' + (it === selected ? ' selected' : '') + (i === active ? ' active' : '') + '" role="option" data-i="' + i + '">' +
+          '<span>' + renderLabel(it) + '</span>' +
+          '<svg class="cbx-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3.5 3.5L13 5"/></svg>' +
+        '</div>'
+      ).join('');
+    }
+    function refresh(resetActive){
+      rank();
+      if (resetActive) active = filtered.length && query.trim() ? 0 : -1;
+      else if (active >= filtered.length) active = filtered.length - 1;
+      paint();
+    }
+    function scrollActive(){ const el = list.querySelector('.cbx-item.active'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+    function place(){
+      panel.classList.remove('open-up');
+      const r = control.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      if (below < 300 && r.top > below) panel.classList.add('open-up');
+    }
+    function openPanel(){
+      if (blocked || open) { if (blocked) return; }
+      open = true; root.classList.add('is-open'); clearError();
+      query = ''; refresh(false); place();
+      if (selected) { try { input.select(); } catch (e) {} }
+    }
+    function closePanel(){
+      open = false; root.classList.remove('is-open'); active = -1; query = ''; input.value = selected;
+    }
+    function commit(val){
+      selected = val; hidden.value = val; query = ''; input.value = val;
+      root.classList.toggle('has-value', !!val); clearError(); closePanel();
+      if (onChange) onChange();
+    }
+    function clearSel(silent){
+      selected = ''; hidden.value = ''; query = ''; input.value = '';
+      root.classList.remove('has-value'); clearError();
+      if (!silent && onChange) onChange();
+    }
+    function clearError(){ root.classList.remove('is-error'); errmsg.textContent = ''; }
+    function showError(msg){ root.classList.add('is-error'); errmsg.textContent = msg; }
+
+    control.addEventListener('mousedown', e => {
+      if (e.target === clearBtn) return;
+      if (blocked) { e.preventDefault(); return; }
+      const toggleZone = (e.target !== input) || isSelect;
+      if (toggleZone) { e.preventDefault(); if (open) { closePanel(); return; } }
+      input.focus();
+      if (!open) openPanel();
+    });
+    input.addEventListener('focus', () => { if (!blocked) openPanel(); });
+    input.addEventListener('input', () => {
+      query = input.value; open = true; root.classList.add('is-open'); clearError();
+      clearTimeout(debTimer);
+      debTimer = setTimeout(() => refresh(true), 150);
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) openPanel(); active = Math.min(active + 1, filtered.length - 1); paint(); scrollActive(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); paint(); scrollActive(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (open && active >= 0 && filtered[active]) commit(filtered[active]); }
+      else if (e.key === 'Escape') { if (open) { e.preventDefault(); closePanel(); } }
+    });
+    input.addEventListener('blur', () => { setTimeout(() => { if (open && !root.contains(document.activeElement)) closePanel(); }, 120); });
+    list.addEventListener('mousedown', e => { const it = e.target.closest('.cbx-item'); if (!it) return; e.preventDefault(); const i = parseInt(it.dataset.i, 10); if (filtered[i]) commit(filtered[i]); });
+    clearBtn.addEventListener('mousedown', e => { e.preventDefault(); clearSel(false); input.focus(); });
+    emptyClear.addEventListener('mousedown', e => { e.preventDefault(); query = ''; input.value = ''; refresh(false); input.focus(); });
+    document.addEventListener('mousedown', e => { if (open && !root.contains(e.target)) closePanel(); });
+
+    return {
+      setItems(arr){ items = (arr || []).slice(); if (open) refresh(false); },
+      getValue(){ return selected; },
+      setValue(v){ if (items.indexOf(v) !== -1) commit(v); },
+      clear(silent){ clearSel(silent); },
+      block(msg){ blocked = true; root.classList.add('is-blocked'); input.disabled = true; input.placeholder = msg || initialBlocked || placeholder; clearSel(true); closePanel(); },
+      enable(){ blocked = false; root.classList.remove('is-blocked'); input.disabled = false; input.placeholder = placeholder; },
+      isValid(){ return !!selected && items.indexOf(selected) !== -1; },
+      showError, clearError
+    };
+  }
+
   const PLACEHOLDER = 'Esse campo será preenchido automaticamente.';
   const placa = document.getElementById('ae-placa');
   const box = document.getElementById('ae-placa-box');
@@ -851,13 +1134,46 @@ function goTo(step) {
   const modelo = document.getElementById('ae-modelo');
   const ano = document.getElementById('ae-ano');
   const fipe = document.getElementById('ae-fipe');
+  const aviso = document.getElementById('ae-sem-fipe-aviso');
+  const fipeField = document.getElementById('ae-fipe-field');
+  const anoField = document.getElementById('ae-ano-field');
+  const split = document.getElementById('ae-split');
+  const declField = document.getElementById('ae-declarado-field');
+  const valorDecl = document.getElementById('ae-valor-declarado');
+  const valorBox = valorDecl ? valorDecl.closest('div') : null;
   if (!placa) return;
 
+  // selects de Ano e Combustível (aparecem quando o modelo não tem FIPE)
+  const anoCbx = document.getElementById('ae-anodecl') ? createCombobox(document.getElementById('ae-anodecl').closest('.cbx'), onDecl) : null;
+  const combCbx = document.getElementById('ae-comb') ? createCombobox(document.getElementById('ae-comb').closest('.cbx'), onDecl) : null;
+  if (anoCbx) anoCbx.setItems(POLICY_YEARS);
+  if (combCbx) combCbx.setItems(COMBUSTIVEIS);
+
+  function setValorBloqueado(b){
+    if (valorDecl) valorDecl.disabled = b;
+    if (valorBox) { valorBox.style.opacity = b ? '0.55' : ''; valorBox.style.pointerEvents = b ? 'none' : ''; }
+  }
+  // Ano + Combustível escolhidos → desbloqueia o valor declarado (o usuário informa)
+  function onDecl(){
+    if (declField && declField.style.display !== 'none' && anoCbx && combCbx && anoCbx.isValid() && combCbx.isValid()) {
+      if (valorDecl && valorDecl.disabled) setValorBloqueado(false);
+    }
+  }
+
+  function modoFipe() {   // volta ao campo travado da FIPE
+    if (aviso) aviso.style.display = 'none';
+    if (fipeField) fipeField.style.display = '';
+    if (anoField) anoField.style.display = '';
+    if (split) split.style.display = 'none';
+    if (declField) declField.style.display = 'none';
+    setValorBloqueado(false);
+  }
   function reset() {
     marca.textContent = PLACEHOLDER;
     modelo.textContent = PLACEHOLDER;
     ano.textContent = PLACEHOLDER;
     fipe.textContent = 'R$ 0,00';
+    modoFipe();
   }
 
   window.buscarPlaca = function () {
@@ -876,8 +1192,56 @@ function goTo(step) {
       marca.textContent = v.marca;
       modelo.textContent = v.modelo;
       ano.textContent = v.ano;
-      fipe.textContent = v.fipe;
+      if (v.semFipe) {
+        // sem FIPE → abre Ano + Combustível manuais e valor declarado (bloqueado até escolher o ano)
+        if (aviso) aviso.style.display = 'block';
+        if (fipeField) fipeField.style.display = 'none';
+        if (anoField) anoField.style.display = 'none';
+        if (split) split.style.display = '';
+        if (declField) declField.style.display = '';
+        if (anoCbx) anoCbx.clear(true);
+        if (combCbx) { combCbx.clear(true); if (v.combustivel) combCbx.setValue(v.combustivel); }
+        if (valorDecl) valorDecl.value = '';
+        setValorBloqueado(true);
+      } else {
+        modoFipe();
+        fipe.textContent = v.fipe;
+      }
     }, 700);
+  };
+
+  // "Simular empréstimo": leva o veículo atual para a tela de resultado (evita mostrar dados de outra placa)
+  function setTxt(id, val){ const e = document.getElementById(id); if (e) e.textContent = val; }
+  window.simularEmprestimo = function () {
+    const isDecl = declField && declField.style.display !== 'none';
+    if (isDecl) {
+      // BYD/sem FIPE: exige ano e valor informados
+      if (anoCbx && !anoCbx.isValid()) { anoCbx.showError('Selecione um ano da lista.'); return; }
+      if (valorDecl && !valorDecl.value) { if (valorDecl.disabled) setValorBloqueado(false); valorDecl.focus(); return; }
+    }
+    const p5 = document.getElementById('ae5-placa'); if (p5) p5.value = placa.value;
+    setTxt('ae5-marca', marca.textContent);
+    setTxt('ae5-modelo', modelo.textContent);
+    const anoField5 = document.getElementById('ae5-ano-field');
+    const split5 = document.getElementById('ae5-split');
+    const lbl = document.getElementById('ae5-valor-label');
+    const renda4 = document.getElementById('ae-renda'), renda5 = document.getElementById('ae5-renda');
+    if (renda4 && renda5) renda5.value = renda4.value;   // a renda do resultado acompanha a do step 1
+    if (isDecl) {
+      if (anoField5) anoField5.style.display = 'none';
+      if (split5) split5.style.display = '';               // mesmos campos do step 1: Ano + Combustível
+      setTxt('ae5-anodecl', (anoCbx && anoCbx.getValue()) || '—');
+      setTxt('ae5-comb', (combCbx && combCbx.getValue()) || '—');
+      setTxt('ae5-valor', (valorDecl && valorDecl.value) || 'R$ 0,00');
+      if (lbl) lbl.textContent = 'Valor do veículo';
+    } else {
+      if (anoField5) anoField5.style.display = '';
+      if (split5) split5.style.display = 'none';
+      setTxt('ae5-ano', ano.textContent);
+      setTxt('ae5-valor', fipe.textContent);
+      if (lbl) lbl.innerHTML = 'Valor conforme a <a href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener" class="underline">tabela FIPE</a> ↗';
+    }
+    goTo(5);
   };
 
   // Enter no campo também busca; digitar limpa o erro
